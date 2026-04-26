@@ -53,6 +53,9 @@ const P1_END = 0.18;
 const P2_END = 0.38;
 const P3_END = 0.55;
 const P4_END = 0.80;
+const P5_END = 0.92;   /* Hello-I-am-Siddharth holds till here */
+/* 0.92-1.0 = phase 6: video slides UP off screen, revealing the
+   work section gradient + curves underneath. */
 
 /* Per spec: video ends at 7.0s (not the full 8s) */
 const VIDEO_PAUSE_AT = 1.86;
@@ -100,8 +103,8 @@ function setPhase(p) {
   if (p === 3) tlA.play();
   else if (p < 3) tlA.reverse();
 
-  // Layer B visible during phase 5
-  if (p === 5) tlB.play();
+  // Layer B visible during phase 5 AND phase 6 (slides up with video in 6)
+  if (p === 5 || p === 6) tlB.play();
   else tlB.reverse();
 
   // Pill nav: hidden in phase 1 (zero-state blur — only the wordmark
@@ -176,13 +179,28 @@ ScrollTrigger.create({
       gsap.set(layerA, { opacity: 1 - t });
       setPhase(4);
     }
-    else {
+    else if (p <= P5_END) {
       // Phase 5: hold B at 7s
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
-      video.style.transform = 'scale(1)';
+      video.style.transform = 'scale(1) translateY(0)';
       video.currentTime = VIDEO_END_AT;
       gsap.set(layerA, { opacity: 0 });
+      gsap.set(stage, { opacity: 1 });
       setPhase(5);
+    }
+    else {
+      // Phase 6: video + Layer B slide UP off screen, revealing the
+      // work section gradient + curves that have been beneath all along.
+      // Stage's whole sticky frame is opacity-faded simultaneously so
+      // any residual silhouette doesn't peek through.
+      const t = (p - P5_END) / (1 - P5_END);
+      const eased = t * t * (3 - 2 * t);          // smoothstep
+      video.style.filter = 'blur(0px) saturate(1) brightness(1)';
+      video.style.transform = `scale(1) translateY(${-100 * eased}%)`;
+      video.currentTime = VIDEO_END_AT;
+      gsap.set(layerA, { opacity: 0 });
+      gsap.set(layerB, { y: -80 * eased, opacity: 1 - eased });
+      setPhase(6);
     }
   }
 });

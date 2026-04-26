@@ -101,32 +101,25 @@
     <!-- ===== INTRO PANEL ===== -->
     <div class="work-intro-panel" id="workIntroPanel">
 
-      <!-- Math curves layer — scattered fixed positions around the title.
-           Each .curve is an empty host; curves.js populates it with SVG
-           (path + animated particle trail). Positions are set via
-           --x/--y CSS variables (% of the panel) and --size for diameter.
-           Each curve has its own fade-in/fade-out delay so the rhythm
-           feels like the cookware-reel reference, not a static frieze.
-           --drift-x/--drift-y carry the anticlockwise tangent direction
-           at each curve's position (computed from CCW tangent in CSS
-           coords) — the curve translates along that vector over its
-           visible window, creating the sequenced anticlockwise feel. -->
+      <!-- Math curves layer — a group of 5 trail-follower curves at
+           scattered positions, with the WHOLE GROUP rotating slowly
+           anticlockwise around the panel center (collective motion),
+           AND each curve subtly wobbling in place (in-place motion).
+           Each curve also fades in/out on a stagger so only 1-2 are
+           visible at a time, matching the cookware-reel rhythm. -->
       <div class="curves" id="workCurves" aria-hidden="true">
-        <div class="curve" data-curve="thinking-nine"
-             style="--x: 18%; --y: 28%; --size: 176px; --fade-delay: 0s;
-                    --drift-x: -9%; --drift-y: 12%;"></div>
-        <div class="curve" data-curve="rose-three"
-             style="--x: 82%; --y: 22%; --size: 160px; --fade-delay: 2.5s;
-                    --drift-x: -12%; --drift-y: -9%;"></div>
-        <div class="curve" data-curve="spiral-search"
-             style="--x: 12%; --y: 72%; --size: 192px; --fade-delay: 4s;
-                    --drift-x: 9%; --drift-y: 15%;"></div>
-        <div class="curve" data-curve="fourier-flow"
-             style="--x: 86%; --y: 70%; --size: 184px; --fade-delay: 1.2s;
-                    --drift-x: 9%; --drift-y: -15%;"></div>
-        <div class="curve" data-curve="lemniscate-bloom"
-             style="--x: 50%; --y: 86%; --size: 160px; --fade-delay: 3.4s;
-                    --drift-x: 15%; --drift-y: 0%;"></div>
+        <div class="curves__group">
+          <div class="curve" data-curve="thinking-nine"
+               style="--x: 22%; --y: 28%; --size: 176px; --fade-delay: 0s;"></div>
+          <div class="curve" data-curve="rose-three"
+               style="--x: 78%; --y: 26%; --size: 160px; --fade-delay: 4s;"></div>
+          <div class="curve" data-curve="spiral-search"
+               style="--x: 16%; --y: 70%; --size: 192px; --fade-delay: 8s;"></div>
+          <div class="curve" data-curve="fourier-flow"
+               style="--x: 84%; --y: 68%; --size: 184px; --fade-delay: 12s;"></div>
+          <div class="curve" data-curve="lemniscate-bloom"
+               style="--x: 50%; --y: 84%; --size: 160px; --fade-delay: 16s;"></div>
+        </div>
       </div>
 
       <div class="work-intro-panel__inner">

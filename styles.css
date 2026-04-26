@@ -76,7 +76,21 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: auto; }
+html {
+  scroll-behavior: auto;
+  /* Snap scroll: proximity (not mandatory) so it doesn't fight the
+     stage's scrubbing. Snap targets are the work-intro-panel and
+     each chapter (declared inline below). The stage itself is NOT
+     a snap target — it's the scrubby intro. */
+  scroll-snap-type: y proximity;
+}
+
+/* Snap targets — one stop per content "page" after the intro stage. */
+.work-intro-panel,
+.chapter {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
 
 body {
   background: var(--bg-deep);
@@ -430,63 +444,36 @@ em { font-style: italic; }
   position: relative;
   /* Top of section is the deep navy from the reference (rgb(26,48,71)). */
   background: rgb(26, 48, 71);
-  padding: 0 0 200px;
+  /* No bottom padding — each chapter is self-contained at 100vh and
+     the footer follows directly. */
+  padding: 0;
   /* NOTE: perspective lives on each .chapter, not here, so position:
      fixed children stay anchored to the viewport instead of being
      trapped inside this element's transform context. */
 }
 
-/* Faint grid throughout — every 80px, very low contrast pale-blue lines */
+/* Grid is already baked into work-bg.jpg, so no separate overlay needed.
+   The .work__grid element stays in the DOM as a no-op for backward
+   compat but draws nothing. */
 .work__grid {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background-image:
-    linear-gradient(to right, rgba(184, 211, 230, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(184, 211, 230, 0.06) 1px, transparent 1px);
-  background-size: 80px 80px;
-  opacity: 0;
-  transition: opacity 0.8s var(--ease-out-soft);
+  display: none;
 }
 
-/* Bottom gradient — sampled exactly from 34.png:
-   - Top half is solid navy (handled by .work background)
-   - Bottom 40% has pale-blue light blooming up from the BOTTOM CORNERS,
-     not the center. The center stays darker, creating a concave shadow
-     valley running down the middle. Recipe: two corner-anchored
-     radials BRIGHTEN the sides, and a centered-bottom radial DARKENS
-     the middle (using the navy color over the brightened layer). */
+/* Bottom gradient — uses the 34.png reference image directly so the
+   tones match exactly. cover stretches it to viewport, fixed pins it. */
 .work__glow {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background:
-    /* Center-bottom dark valley (punches through the bloom) */
-    radial-gradient(ellipse 35% 45% at 50% 100%,
-      rgba(26, 48, 71, 0.95) 0%,
-      rgba(26, 48, 71, 0.65) 30%,
-      rgba(26, 48, 71, 0.25) 55%,
-      transparent 75%),
-    /* Bottom-right corner bloom */
-    radial-gradient(ellipse 55% 60% at 95% 105%,
-      rgba(180, 215, 245, 0.95) 0%,
-      rgba(160, 200, 235, 0.55) 30%,
-      rgba(140, 180, 215, 0.20) 55%,
-      transparent 75%),
-    /* Bottom-left corner bloom */
-    radial-gradient(ellipse 55% 60% at 5% 105%,
-      rgba(180, 215, 245, 0.95) 0%,
-      rgba(160, 200, 235, 0.55) 30%,
-      rgba(140, 180, 215, 0.20) 55%,
-      transparent 75%),
-    /* Wide soft bottom lift — lifts the whole bottom band evenly */
-    linear-gradient(to top,
-      rgba(159, 198, 231, 0.85) 0%,
-      rgba(120, 160, 200, 0.45) 12%,
-      rgba(80, 115, 150, 0.15) 25%,
-      transparent 40%);
+  background-image: url('assets/work-bg.jpg');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
   opacity: 0;
   transition: opacity 0.8s var(--ease-out-soft);
 }
@@ -525,6 +512,21 @@ em { font-style: italic; }
   color: rgb(184, 211, 230);
 }
 
+/* Collective motion — the whole group of 5 curves rotates anticlockwise
+   around the panel's center as a unit. Slow (90s/revolution) so the
+   eye reads it as ambient drift rather than active spinning. */
+.curves__group {
+  position: absolute;
+  inset: 0;
+  animation: curves-group-rotate 90s linear infinite;
+  transform-origin: 50% 50%;
+}
+
+@keyframes curves-group-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }   /* negative = anticlockwise */
+}
+
 .curve {
   position: absolute;
   /* --x and --y are positions in % of the panel, set inline per curve */
@@ -532,68 +534,71 @@ em { font-style: italic; }
   top: var(--y);
   width: var(--size, 200px);
   height: var(--size, 200px);
-  /* Drift transform set per-frame via the curve-cycle keyframe (combines
-     centering and anticlockwise tangent translate). */
-  transform: translate(-50%, -50%);
-  /* Cookware-reel rhythm: appear, hold, drift, fade. Each curve has a
-     different --fade-delay so cycles don't sync. */
-  animation: curve-cycle 14s ease-in-out var(--fade-delay, 0s) infinite;
+  /* Cycle handles BOTH centering translate AND in-place wobble together.
+     Total cycle = 20s. Visible window ~25% (5s) so most of the time the
+     curve is hidden — matches reel where 1-2 max are lit at any moment. */
+  animation: curve-cycle 20s ease-in-out var(--fade-delay, 0s) infinite;
   opacity: 0;
-  /* Hover events on the curve element itself (override parent's none) */
   pointer-events: auto;
-  /* Motion-blur ride: peaks at fade edges, zero at hold */
-  filter: blur(0);
-  /* Smooth transitions when hover lands */
+  /* Each curve counter-rotates against the group so its trail-follower
+     reads upright most of the time. Without this the group rotation
+     would visibly spin each curve. */
+  --counter-rot: 0deg;
+  /* Smooth transition for the hover snap */
   transition: filter 0.25s ease, color 0.25s ease;
 }
 
-/* Combined keyframe: opacity fade + anticlockwise drift translate +
-   motion blur. The drift is added on top of the centering -50% so the
-   curve translates along its tangent vector while staying anchored to
-   its (--x, --y) point. */
+/* Single keyframe combining: opacity fade + centering + in-place wobble.
+   Wobble is a tiny rotation that runs throughout the visible window —
+   creates the "alive" feel from the reel where each sketch shimmers
+   subtly even while standing still. Most of the cycle is invisible. */
 @keyframes curve-cycle {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%);
-    filter: blur(3px);
+    transform: translate(-50%, -50%) rotate(-3deg) scale(0.96);
+    filter: blur(4px);
   }
-  18% {
-    opacity: 0.85;
-    transform: translate(calc(-50% + var(--drift-x) * 0.3),
-                         calc(-50% + var(--drift-y) * 0.3));
-    filter: blur(0.5px);
+  10% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) rotate(-1deg) scale(0.99);
+    filter: blur(0.8px);
   }
-  60% {
-    opacity: 0.85;
-    transform: translate(calc(-50% + var(--drift-x) * 0.7),
-                         calc(-50% + var(--drift-y) * 0.7));
+  20% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
     filter: blur(0);
   }
-  82% {
+  30% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) rotate(2deg) scale(1.01);
+    filter: blur(0);
+  }
+  40% {
     opacity: 0;
-    transform: translate(calc(-50% + var(--drift-x)),
-                         calc(-50% + var(--drift-y)));
-    filter: blur(3px);
+    transform: translate(-50%, -50%) rotate(3deg) scale(0.98);
+    filter: blur(4px);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -50%);
-    filter: blur(3px);
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.96);
+    filter: blur(4px);
   }
 }
 
 /* Hover: snap stroke + particles to white, add a soft glow halo,
-   pause the fade animation so the curve stays visible while hovered.
-   !important is needed on opacity and filter because pausing the
-   animation freezes the current keyframe's computed values for
-   animated properties — without !important the hover declaration
-   loses to those frozen values. */
+   pause both the cycle and the group rotation so the hover target
+   stays still. */
 .curve:hover {
   color: rgb(255, 255, 255);
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.55))
           drop-shadow(0 0 18px rgba(255, 255, 255, 0.35)) !important;
   animation-play-state: paused;
   opacity: 1 !important;
+}
+
+/* When any curve is hovered, also pause the parent group rotation */
+.curves__group:has(.curve:hover) {
+  animation-play-state: paused;
 }
 
 .work-intro-panel__inner {
@@ -630,7 +635,11 @@ em { font-style: italic; }
 .chapter {
   position: relative;
   z-index: 1;
-  padding: 80px 64px;
+  /* Single viewport per chapter — fits within the first viewfold so
+     snap-scroll lands cleanly on each one. */
+  height: 100vh;
+  min-height: 640px;
+  padding: 60px 64px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -642,7 +651,10 @@ em { font-style: italic; }
   position: relative;
   width: 100%;
   max-width: 1480px;
-  padding: 64px 72px 0;
+  /* Tightened padding so card fits within its 100vh container */
+  padding: 40px 56px 32px;
+  /* Prevent card from overflowing its single-viewport parent */
+  max-height: 100%;
   background: rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(14px) saturate(1.15);
   -webkit-backdrop-filter: blur(14px) saturate(1.15);
