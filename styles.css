@@ -1,0 +1,965 @@
+/* ===========================================================
+   SYDRTH — portfolio v2
+   Faithful to mock: cream pill nav, frosted glass card,
+   "Human-first / AI-second" → "Hello, I am Siddharth" arc.
+   Fonts: Canela (display) + Google Sans (UI/body)
+   =========================================================== */
+
+/* ---------- Local fonts (commercial — keep in assets/fonts/) ---------- */
+@font-face {
+  font-family: 'Canela';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('assets/fonts/Canela-Light.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Canela';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('assets/fonts/Canela-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Canela';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('assets/fonts/Canela-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('assets/fonts/GoogleSans-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('assets/fonts/GoogleSans-Medium.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Google Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('assets/fonts/GoogleSans-Bold.woff2') format('woff2');
+}
+
+:root {
+  /* Palette pulled from the video footage */
+  --bg-deep:    #0a1220;     /* fallback when video isn't rendered */
+  --blue-deep:  #1a4769;     /* dominant blue from mock */
+  --blue-mid:   #2f678c;
+  --steel:      #d4d9df;
+  --white:      #ffffff;
+  --pale-blue:  #b8d3e6;     /* "AI-second" tint */
+  --steel-dim:  #8a96a6;
+  --steel-faint:#3b475b;
+
+  /* Pill nav cream */
+  --cream:      #f0e6d4;
+  --cream-soft: #e8dbc4;
+  --ink:        #14253a;     /* dark text on cream */
+
+  /* Type — wordmark uses Helvetica per spec, body uses Google Sans, display uses Canela */
+  --display:  'Canela', 'Times New Roman', serif;
+  --sans:     'Google Sans', system-ui, sans-serif;
+  --wordmark: 'Helvetica Neue', Helvetica, 'Arial Black', sans-serif;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-cinema:   cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: auto; }
+
+body {
+  background: var(--bg-deep);
+  color: var(--white);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+img, video { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+em { font-style: italic; }
+
+/* ========= WORDMARK (top-left, scales on scroll) =========
+   Now an image asset (assets/sydrth-logo.png). The <a> remains the
+   transform target — JS still writes --wordmark-scale on this element
+   during phase 4, and transform-origin: top left keeps the mark
+   anchored to the corner as it shrinks. The <img> inside is sized by
+   height; width follows from the asset's intrinsic aspect ratio. */
+.wordmark {
+  position: fixed;
+  top: 36px;
+  left: 48px;
+  z-index: 60;
+  display: inline-block;
+  transform-origin: top left;
+  transform: scale(var(--wordmark-scale, 1));
+  will-change: transform;
+  /* Keep the link sized exactly to its image — no inherited line-box quirks. */
+  line-height: 0;
+}
+
+.wordmark__img {
+  display: block;
+  /* Height-driven sizing to roughly match the previous text wordmark's
+     visual weight. Width follows from aspect ratio (~2.94:1). */
+  height: clamp(60px, 9.5vw, 140px);
+  width: auto;
+  /* Ensure crisp scaling on retina; no smoothing artefacts when the
+     transform shrinks it during phase 4. */
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ========= PILL NAV (top-right) — dark glass with cream CTA inside ========= */
+.pill-nav {
+  position: fixed;
+  top: 36px;
+  right: 48px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  /* Dark frosted glass — translucent navy w/ blur */
+  background: rgba(20, 37, 58, 0.32);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  border-radius: 999px;
+  padding: 6px;
+  /* Glass edge: soft top highlight + subtle 1px border */
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 6px 24px rgba(0, 0, 0, 0.18);
+  font-family: var(--sans);
+  /* Smoothly fade in/out when phase 1 ends — see .is-hidden below */
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Zero-state: wordmark only. JS removes this class when stage exits phase 1. */
+.pill-nav.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+}
+
+.pill-nav__items {
+  display: flex;
+  list-style: none;
+  align-items: center;
+  gap: 0;
+}
+
+.pill-nav__link {
+  position: relative;
+  display: inline-block;
+  padding: 10px 22px;
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  transition: color 0.3s var(--ease-out-soft);
+}
+
+.pill-nav__link:hover { color: var(--white); }
+
+/* Active state — short underline beneath the label, white */
+.pill-nav__link.is-active {
+  color: var(--white);
+  font-weight: 500;
+}
+.pill-nav__link.is-active::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 18px;
+  height: 1.5px;
+  background: var(--white);
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+/* The CTA — cream pill nested inside the dark glass pill */
+.pill-nav__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  margin-left: 6px;
+  background: var(--cream);
+  color: var(--ink);
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 1px 2px rgba(0, 0, 0, 0.08);
+  transition: background 0.3s var(--ease-out-soft), transform 0.3s var(--ease-out-soft);
+}
+
+.pill-nav__cta:hover {
+  background: #f5e9d0;
+  transform: translateY(-1px);
+}
+
+.pill-nav__arrow { display: inline-block; }
+
+/* ========= STAGE (scroll-pinned hero) ========= */
+.stage {
+  position: relative;
+  height: 500vh;
+  width: 100%;
+  background: var(--bg-deep);
+}
+
+.stage__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.stage__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(40px) saturate(0.7) brightness(0.75);
+  transform: scale(1.1);
+  will-change: filter, transform;
+}
+
+.stage__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgba(10, 18, 32, 0.25) 0%, transparent 30%, transparent 70%, rgba(5, 12, 24, 0.6) 100%);
+}
+
+/* ========= STAGE LAYERS ========= */
+.stage__layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+/* ----- LAYER A: Human-first / AI-second + glass card ----- */
+.stage__layer--a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  /* Equal padding on left, right, and bottom so both children
+     read as equidistant from the viewport edges. */
+  padding: 0 48px 48px;
+  gap: 40px;
+}
+
+.hero-a__title {
+  font-family: var(--display);
+  font-weight: 300;
+  /* Reduced 20% from previous clamp(2.8rem, 8.6vw, 8rem). */
+  font-size: clamp(2.24rem, 6.88vw, 6.4rem);
+  line-height: 1.02;             /* slightly looser to give the f-tail room visually */
+  letter-spacing: -0.025em;
+  color: var(--white);
+  max-width: 16ch;
+  font-style: normal;            /* "Human-first." stays upright */
+}
+
+.hero-a__title em {
+  font-style: normal;            /* both lines upright per mock */
+  color: var(--pale-blue);
+}
+
+/* Frosted glass card — matches mock spec.
+   Visible 1px hairline border on all four sides (mock shows it equally
+   bright on every edge — no top-heavy inset highlight). Card body lifts
+   the backdrop slightly via low-opacity white + saturation bump from
+   backdrop-filter. */
+.glass-card {
+  position: relative;
+  align-self: end;
+  padding: 48px 44px;                         /* more generous breathing room */
+  min-width: 320px;
+  border-radius: 0;                            /* sharp rectangle per mock */
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  /* Single visible hairline on all sides — matches mock exactly */
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  /* Subtle outer shadow only; no inset top-only highlight that would
+     make the top edge look brighter than the others. */
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.10);
+  color: var(--white);
+}
+
+.glass-card__title {
+  font-family: var(--sans);
+  font-weight: 700;                            /* Bold — heaviest weight loaded */
+  font-size: clamp(1.7rem, 2.4vw, 2.3rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;                     /* tighter — adds visual heft to compensate */
+  text-transform: uppercase;
+  color: var(--white);
+}
+
+.glass-card__sub {
+  margin-top: 18px;
+  font-family: var(--sans);
+  font-weight: 700;                            /* bold per latest spec */
+  /* Sized to ~0.54x of title — matches mock proportion */
+  font-size: clamp(1rem, 1.3vw, 1.25rem);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  /* Desaturated pale-blue-gray, sits quietly inside the card */
+  color: rgba(216, 226, 236, 0.55);
+}
+
+/* ----- LAYER B: "Hello, I am Siddharth." + intro paragraph
+        Right-side stacked. Title and body both pinned to right column,
+        body sits directly under title. Figure occupies left half. */
+.stage__layer--b {
+  display: flex;
+  align-items: center;
+  /* Position the column equidistant between the subject's right edge
+     (~58% across) and the viewport right edge (100%). The midpoint of
+     that 42% gap sits at ~79% across. We place the column there using
+     a calculated right padding that keeps the gaps symmetric: with a
+     400px column and 1440px viewport, padding-right ~100px lands the
+     left edge at ~940 and the right edge at ~1340 — gap to subject ~110,
+     gap to viewport edge ~100. Visually equidistant. */
+  justify-content: flex-end;
+  padding: 0 100px 0 0;
+}
+
+.stage__layer--b .hero-b {
+  /* Override the wider default so this column doesn't overflow toward
+     the subject. Smaller width keeps the column tight on the right. */
+  width: min(28%, 400px);
+}
+
+.hero-b {
+  /* Wrapper that holds title above body, both right-aligned to the column. */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;                                 /* tighter title→body gap per mock */
+  width: min(34%, 480px);
+}
+
+.hero-b__title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(2.5rem, 5.6vw, 5.4rem);
+  line-height: 1.0;
+  letter-spacing: -0.025em;
+  color: var(--pale-blue);
+  font-style: normal;          /* upright per mock */
+}
+
+.hero-b__title em {
+  font-style: normal;          /* keep upright, no italic */
+  color: var(--white);         /* "Siddharth." — white per latest mock */
+}
+
+.hero-b__intro {
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: clamp(1rem, 1.2vw, 1.2rem);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 32ch;
+}
+
+/* Split text — words start hidden, JS reveals.
+   Wrapper uses padding + clip-path instead of overflow:hidden so that
+   descenders, italic serif tails (the "f" in "first"), and any glyph
+   that excurses outside the em-box don't get cropped. The clip-path
+   masks during reveal but releases at rest so glyphs render in full. */
+[data-split="words"] .word {
+  display: inline-block;
+  vertical-align: top;
+  /* Generous vertical padding so glyph excursions never touch the box edges */
+  padding: 0.18em 0 0.22em;
+  margin: -0.18em 0 -0.22em;
+  /* clip-path masks the inner during the reveal; once the inner has
+     translated to y:0%, this still sits beyond the visible glyph and
+     no longer crops anything. */
+  clip-path: inset(0);
+  -webkit-clip-path: inset(0);
+}
+[data-split="words"] .word-inner {
+  display: inline-block;
+  transform: translateY(110%);
+  opacity: 0;
+}
+
+/* ========= WORK SECTION
+     Backdrop architecture:
+     - .work__grid is the faint grid overlay.
+     - .work__glow is the bottom gradient — pale-blue light rising from
+       both bottom corners, with a darker valley running down the
+       center. Sampled directly from the 34.png reference.
+     - Both are POSITION: FIXED so they stay locked to viewport.
+     - Cards live in normal scroll flow.
+   ========================================================= */
+.work {
+  position: relative;
+  /* Top of section is the deep navy from the reference (rgb(26,48,71)). */
+  background: rgb(26, 48, 71);
+  padding: 0 0 200px;
+  /* NOTE: perspective lives on each .chapter, not here, so position:
+     fixed children stay anchored to the viewport instead of being
+     trapped inside this element's transform context. */
+}
+
+/* Faint grid throughout — every 80px, very low contrast pale-blue lines */
+.work__grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, rgba(184, 211, 230, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(184, 211, 230, 0.06) 1px, transparent 1px);
+  background-size: 80px 80px;
+  opacity: 0;
+  transition: opacity 0.8s var(--ease-out-soft);
+}
+
+/* Bottom gradient — sampled exactly from 34.png:
+   - Top half is solid navy (handled by .work background)
+   - Bottom 40% has pale-blue light blooming up from the BOTTOM CORNERS,
+     not the center. The center stays darker, creating a concave shadow
+     valley running down the middle. Recipe: two corner-anchored
+     radials BRIGHTEN the sides, and a centered-bottom radial DARKENS
+     the middle (using the navy color over the brightened layer). */
+.work__glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    /* Center-bottom dark valley (punches through the bloom) */
+    radial-gradient(ellipse 35% 45% at 50% 100%,
+      rgba(26, 48, 71, 0.95) 0%,
+      rgba(26, 48, 71, 0.65) 30%,
+      rgba(26, 48, 71, 0.25) 55%,
+      transparent 75%),
+    /* Bottom-right corner bloom */
+    radial-gradient(ellipse 55% 60% at 95% 105%,
+      rgba(180, 215, 245, 0.95) 0%,
+      rgba(160, 200, 235, 0.55) 30%,
+      rgba(140, 180, 215, 0.20) 55%,
+      transparent 75%),
+    /* Bottom-left corner bloom */
+    radial-gradient(ellipse 55% 60% at 5% 105%,
+      rgba(180, 215, 245, 0.95) 0%,
+      rgba(160, 200, 235, 0.55) 30%,
+      rgba(140, 180, 215, 0.20) 55%,
+      transparent 75%),
+    /* Wide soft bottom lift — lifts the whole bottom band evenly */
+    linear-gradient(to top,
+      rgba(159, 198, 231, 0.85) 0%,
+      rgba(120, 160, 200, 0.45) 12%,
+      rgba(80, 115, 150, 0.15) 25%,
+      transparent 40%);
+  opacity: 0;
+  transition: opacity 0.8s var(--ease-out-soft);
+}
+
+/* Both backdrop layers light up when the work section is in view */
+.work.is-active .work__grid,
+.work.is-active .work__glow {
+  opacity: 1;
+}
+
+/* ===== "MY WORK" INTRO PANEL ===== */
+.work-intro-panel {
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  min-height: 720px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Math curves layer =====
+   Five trail-follower curves at scattered fixed positions around the
+   title. Each .curve hosts an SVG (built by curves.js) running its
+   own particle-trail animation. Containers fade in/out + drift in the
+   anticlockwise tangent direction over each cycle, with motion blur
+   peaking on the fade edges (suggests inertia — the curve is "moving"
+   even though it's only translating slightly). Hover snaps to white. */
+.curves {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  /* Pale-blue color flows through to <path stroke="currentColor"> and
+     particle <circle fill="currentColor"> inside each curve's SVG. */
+  color: rgb(184, 211, 230);
+}
+
+.curve {
+  position: absolute;
+  /* --x and --y are positions in % of the panel, set inline per curve */
+  left: var(--x);
+  top: var(--y);
+  width: var(--size, 200px);
+  height: var(--size, 200px);
+  /* Drift transform set per-frame via the curve-cycle keyframe (combines
+     centering and anticlockwise tangent translate). */
+  transform: translate(-50%, -50%);
+  /* Cookware-reel rhythm: appear, hold, drift, fade. Each curve has a
+     different --fade-delay so cycles don't sync. */
+  animation: curve-cycle 14s ease-in-out var(--fade-delay, 0s) infinite;
+  opacity: 0;
+  /* Hover events on the curve element itself (override parent's none) */
+  pointer-events: auto;
+  /* Motion-blur ride: peaks at fade edges, zero at hold */
+  filter: blur(0);
+  /* Smooth transitions when hover lands */
+  transition: filter 0.25s ease, color 0.25s ease;
+}
+
+/* Combined keyframe: opacity fade + anticlockwise drift translate +
+   motion blur. The drift is added on top of the centering -50% so the
+   curve translates along its tangent vector while staying anchored to
+   its (--x, --y) point. */
+@keyframes curve-cycle {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    filter: blur(3px);
+  }
+  18% {
+    opacity: 0.85;
+    transform: translate(calc(-50% + var(--drift-x) * 0.3),
+                         calc(-50% + var(--drift-y) * 0.3));
+    filter: blur(0.5px);
+  }
+  60% {
+    opacity: 0.85;
+    transform: translate(calc(-50% + var(--drift-x) * 0.7),
+                         calc(-50% + var(--drift-y) * 0.7));
+    filter: blur(0);
+  }
+  82% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--drift-x)),
+                         calc(-50% + var(--drift-y)));
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    filter: blur(3px);
+  }
+}
+
+/* Hover: snap stroke + particles to white, add a soft glow halo,
+   pause the fade animation so the curve stays visible while hovered.
+   !important is needed on opacity and filter because pausing the
+   animation freezes the current keyframe's computed values for
+   animated properties — without !important the hover declaration
+   loses to those frozen values. */
+.curve:hover {
+  color: rgb(255, 255, 255);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.55))
+          drop-shadow(0 0 18px rgba(255, 255, 255, 0.35)) !important;
+  animation-play-state: paused;
+  opacity: 1 !important;
+}
+
+.work-intro-panel__inner {
+  position: relative;
+  /* Above curves */
+  z-index: 2;
+  text-align: center;
+  max-width: 720px;
+  padding: 0 40px;
+}
+
+.work-intro-panel__title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(4.5rem, 11vw, 11rem);
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--white);
+  margin-bottom: 28px;
+}
+
+.work-intro-panel__note {
+  font-family: var(--sans);
+  font-size: clamp(0.95rem, 1.1vw, 1.05rem);
+  line-height: 1.55;
+  color: var(--steel-dim);
+  max-width: 56ch;
+  margin: 0 auto;
+}
+
+/* ===== CHAPTER CARDS =====
+   Each card enters with a 3D tilt that flattens as it comes into view —
+   like the card is being pulled forward through space. */
+.chapter {
+  position: relative;
+  z-index: 1;
+  padding: 80px 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Perspective on each chapter so we can tilt the inner card */
+  perspective: 2000px;
+}
+
+.chapter__card {
+  position: relative;
+  width: 100%;
+  max-width: 1480px;
+  padding: 64px 72px 0;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(14px) saturate(1.15);
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0;
+  box-shadow:
+    inset 1.5px 1.5px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.08),
+    0 12px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  /* Cursor-tracking glow lives here */
+}
+
+/* Cursor-following spotlight inside the card — coords driven by JS */
+.chapter__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    420px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(184, 211, 230, 0.10),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-out-soft);
+  pointer-events: none;
+  z-index: 2;
+}
+.chapter__card:hover::before {
+  opacity: 1;
+}
+
+/* A second highlight that catches the upper-left edge — like rim light */
+.chapter__card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 30%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chapter__head {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 80px;
+  margin-bottom: 56px;
+  align-items: start;
+  position: relative;
+  z-index: 3;
+}
+
+.chapter__col--copy {
+  padding-top: 38px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  align-items: flex-start;
+}
+
+.chapter__eyebrow {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+  margin-bottom: 24px;
+}
+
+.chapter__title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(2.2rem, 4.6vw, 4.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  color: var(--white);
+  max-width: 14ch;
+}
+
+.chapter__body {
+  font-family: var(--sans);
+  font-size: clamp(1rem, 1.15vw, 1.15rem);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 50ch;
+}
+
+.chapter__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 24px;
+  border-radius: 999px;
+  background: rgba(20, 37, 58, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--white);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.16);
+  transition: background 0.3s var(--ease-out-soft), transform 0.3s var(--ease-out-soft);
+}
+.chapter__cta:hover {
+  background: rgba(35, 60, 90, 0.65);
+  transform: translateY(-1px);
+}
+.chapter__cta-arrow {
+  display: inline-block;
+  transition: transform 0.3s var(--ease-out-soft);
+}
+.chapter__cta:hover .chapter__cta-arrow {
+  transform: translate(2px, -2px);
+}
+
+.chapter__media {
+  position: relative;
+  z-index: 3;
+  margin: 0 -72px;
+  width: calc(100% + 144px);
+  overflow: hidden;
+}
+.chapter__media img,
+.chapter__media video {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.chapter__placeholder {
+  height: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background:
+    repeating-linear-gradient(
+      45deg, transparent 0, transparent 24px,
+      rgba(184, 211, 230, 0.025) 24px, rgba(184, 211, 230, 0.025) 25px
+    ),
+    linear-gradient(180deg, rgba(20, 37, 58, 0.5) 0%, rgba(184, 211, 230, 0.12) 100%);
+  font-family: var(--sans);
+}
+.chapter__placeholder-label {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.6);
+}
+.chapter__placeholder-note {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.chapter [data-split="words"] .word-inner {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.6em);
+}
+
+@media (max-width: 900px) {
+  .work { padding: 0 0 120px; }
+  .work-intro-panel { min-height: 560px; }
+  .chapter { padding: 40px 20px; perspective: none; }
+  .chapter__card { padding: 40px 24px 0; }
+  .chapter__head {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    margin-bottom: 40px;
+  }
+  .chapter__col--copy { padding-top: 0; gap: 24px; }
+  .chapter__title { max-width: none; }
+  .chapter__media {
+    margin: 0 -24px;
+    width: calc(100% + 48px);
+  }
+  .chapter__placeholder { height: 280px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter [data-split="words"] .word-inner {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .chapter__card { transform: none !important; }
+}
+
+/* ========= FOOTER ========= */
+.footer {
+  padding: 160px 40px 40px;
+  border-top: 1px solid var(--steel-faint);
+  margin-top: 120px;
+}
+.footer__inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  gap: 56px;
+}
+.footer__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.footer__row--wide {
+  padding-top: 48px;
+  border-top: 1px solid var(--steel-faint);
+  flex-wrap: wrap;
+  gap: 32px;
+}
+.footer__label {
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--steel-dim);
+}
+.footer__title {
+  font-family: var(--display);
+  font-weight: 300;
+  font-size: clamp(3rem, 10vw, 9rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--white);
+}
+.footer__title em { font-style: italic; color: var(--pale-blue); }
+
+.footer__email {
+  font-family: var(--display);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  font-style: italic;
+  color: var(--white);
+  border-bottom: 1px solid var(--steel-faint);
+  padding-bottom: 4px;
+  transition: color 0.3s var(--ease-out-soft), border-color 0.3s var(--ease-out-soft);
+}
+.footer__email:hover { color: var(--pale-blue); border-color: var(--pale-blue); }
+
+.footer__socials {
+  display: flex;
+  gap: 28px;
+  list-style: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.footer__socials a { color: var(--white); transition: color 0.3s var(--ease-out-soft); }
+.footer__socials a:hover { color: var(--pale-blue); }
+
+.footer__fine {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 32px;
+  border-top: 1px solid var(--steel-faint);
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--steel-faint);
+}
+
+/* ========= RESPONSIVE ========= */
+@media (max-width: 900px) {
+  .wordmark { left: 20px; top: 20px; }
+  .pill-nav { right: 20px; top: 20px; padding: 4px; }
+  .pill-nav__link, .pill-nav__cta { padding: 8px 12px; font-size: 12px; }
+  .pill-nav__items { gap: 0; }
+
+  .stage__layer--a {
+    grid-template-columns: 1fr;
+    padding: 0 20px 40px;
+    align-items: end;
+  }
+  .glass-card { min-width: auto; padding: 20px 24px; align-self: start; justify-self: end; }
+  .stage__layer--b {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 0 20px;
+  }
+
+  .work-intro { padding: 140px 20px 80px; }
+
+  .case { min-height: auto; }
+  .case__preview, .case--reverse .case__preview { padding: 0; min-height: 60vh; }
+  .case__preview > video, .case__preview > img, .case__preview > .placeholder { height: 60vh; }
+  .case__panel, .case--reverse .case__panel {
+    position: relative; width: 100%; left: auto; right: auto;
+    padding: 60px 20px;
+    border: none;
+    border-bottom: 1px solid rgba(212, 217, 223, 0.06);
+  }
+  .case__panel-inner { max-width: none; }
+
+  .footer { padding: 100px 20px 30px; }
+  .footer__row--wide { flex-direction: column; align-items: flex-start; }
+  .footer__fine { flex-direction: column; gap: 8px; }
+}
+
+/* ========= REDUCED MOTION ========= */
+@media (prefers-reduced-motion: reduce) {
+  .stage { height: auto; }
+  .stage__sticky { position: relative; height: auto; min-height: 100vh; }
+  .stage__video { filter: none !important; transform: none !important; }
+  .stage__layer { position: relative; opacity: 1 !important; padding: 80px 40px; }
+  [data-split="words"] .word-inner { transform: none !important; opacity: 1 !important; }
+  .wordmark { position: relative; top: auto; left: auto; }
+}
