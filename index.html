@@ -101,38 +101,38 @@
     <!-- ===== INTRO PANEL ===== -->
     <div class="work-intro-panel" id="workIntroPanel">
 
-      <!-- Math curves layer — a group of 5 trail-follower curves at
-           scattered positions, with the WHOLE GROUP rotating slowly
-           anticlockwise around the panel center (collective motion),
-           AND each curve subtly wobbling in place (in-place motion).
-           Each curve also fades in/out on a stagger so only 1-2 are
-           visible at a time, matching the cookware-reel rhythm. -->
+      <!-- Math curves layer — positioned OUTSIDE the title bounding box.
+           Title sits at 50% / 50% spanning ~30-70% horizontally and
+           ~40-60% vertically (with subtext extending to ~65%). So
+           curves go to upper corners (above title), and lower corners
+           well below the subtext. Never crossing the central column. -->
       <div class="curves" id="workCurves" aria-hidden="true">
         <div class="curves__group">
           <div class="curve" data-curve="thinking-nine"
-               style="--x: 22%; --y: 28%; --size: 176px; --fade-delay: 0s;"></div>
+               style="--x: 22%; --y: 22%; --size: 141px; --fade-delay: 0s;"></div>
           <div class="curve" data-curve="rose-three"
-               style="--x: 78%; --y: 26%; --size: 160px; --fade-delay: 4s;"></div>
+               style="--x: 78%; --y: 22%; --size: 152px; --fade-delay: 4s;"></div>
           <div class="curve" data-curve="spiral-search"
-               style="--x: 16%; --y: 70%; --size: 192px; --fade-delay: 8s;"></div>
+               style="--x: 18%; --y: 78%; --size: 176px; --fade-delay: 8s;"></div>
           <div class="curve" data-curve="fourier-flow"
-               style="--x: 84%; --y: 68%; --size: 184px; --fade-delay: 12s;"></div>
+               style="--x: 82%; --y: 76%; --size: 168px; --fade-delay: 12s;"></div>
           <div class="curve" data-curve="lemniscate-bloom"
-               style="--x: 50%; --y: 84%; --size: 160px; --fade-delay: 16s;"></div>
+               style="--x: 50%; --y: 88%; --size: 144px; --fade-delay: 16s;"></div>
         </div>
       </div>
 
       <div class="work-intro-panel__inner">
         <h2 class="work-intro-panel__title" data-split="words">My Work</h2>
         <p class="work-intro-panel__note">
-          Due to NDA constraints with Google, full case studies aren't
-          publicly accessible. The chapters that follow are framing —
-          tap "View case study" to request access.
+          Due to the private nature of my work, full case studies aren't
+          publicly accessible &mdash; tap "View case study" to request access.
+        </p>
         </p>
       </div>
     </div>
 
-    <!-- ===== CHAPTER 01: BILLIE ===== -->
+    <!-- ===== CHAPTER 01: REFRAMING BILLING IN GOOGLE ADS =====
+         Has media: chapter-01-media.jpg (AI Mode + Best ROI scene). -->
     <article class="chapter" id="chapter-01" data-chapter="01">
       <div class="chapter__card">
         <div class="chapter__head">
@@ -144,83 +144,164 @@
           </div>
           <div class="chapter__col chapter__col--copy">
             <p class="chapter__body" data-split="words">
-              As the UX Lead for Google Ads Billing, I reframed the
-              billing surface from a transactional ledger into a
-              narrative, agentic morning brief — built for large-scale
-              advertisers who manage millions in monthly spend.
+              Billing was an afterthought — a place advertisers visited
+              after the money was already spent. This vision turns it
+              into the front door: an agentic surface that translates
+              Google's taxonomy into each advertiser's, tracks ROI as
+              it happens, and acts on their behalf. The framework is
+              being adopted across Ads.
             </p>
-            <a class="chapter__cta" href="#">
-              <span>View case study</span>
-              <span class="chapter__cta-arrow" aria-hidden="true">↗</span>
-            </a>
+            <div class="chapter__cta-group">
+              <a class="chapter__cta" href="https://docs.google.com/presentation/d/1PL74j4anEr1u5HFGHroMrg9WHQxf4t_qMzI4qSCRL44/edit?usp=sharing" target="_blank" rel="noopener noreferrer">
+                <span class="chapter__cta-label">View case study</span>
+                <span class="chapter__cta-arrow" aria-hidden="true">↗</span>
+              </a>
+              <div class="chapter__cta-aside" aria-hidden="true">
+                <span class="chapter__cta-lock">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+                    <path d="M5 7V5a3 3 0 0 1 6 0v2"/>
+                  </svg>
+                </span>
+                <span class="chapter__cta-note">Request access &mdash; I approve within 24h</span>
+              </div>
+            </div>
           </div>
         </div>
         <figure class="chapter__media">
-          <img src="assets/billie-dashboard.png" alt="Billie billing overview dashboard — Google Ads" />
+          <img src="assets/chapter-01-media.jpg" alt="Reframing billing in Google Ads — AI Mode concept with ROI summary card" />
         </figure>
       </div>
     </article>
 
-    <!-- ===== CHAPTER 02: ADS INCENTIVES ===== -->
+    <!-- ===== CHAPTER 02: RESPONSIBLE FEATURE ACCESS IN ADS =====
+         Has media: chapter-02-media.jpg (silhouettes/monitors + trust tile). -->
     <article class="chapter" id="chapter-02" data-chapter="02">
       <div class="chapter__card">
         <div class="chapter__head">
           <div class="chapter__col chapter__col--title">
             <div class="chapter__eyebrow">Chapter 2</div>
             <h3 class="chapter__title" data-split="words">
-              A two-year vision for Ads Incentives
+              Responsible feature access in Ads
             </h3>
           </div>
           <div class="chapter__col chapter__col--copy">
             <p class="chapter__body" data-split="words">
-              A 2025–2027 roadmap turning promotional coupons from a
-              transactional acquisition tool into a trust-building
-              ritual — built across six phases with PMM, UXR, and
-              Product alignment on persona direction.
+              Every new advertiser arrived with the same access — full
+              keys to the platform from day one — even though abuse
+              clustered around a small set of risky features. This work
+              introduced progressive trust: feature access that earns
+              itself over time, shaped jointly with safety partners.
+              The framework now anchors how Ads thinks about risk at
+              sign-up.
             </p>
-            <a class="chapter__cta" href="#">
-              <span>View case study</span>
-              <span class="chapter__cta-arrow" aria-hidden="true">↗</span>
-            </a>
+            <div class="chapter__cta-group">
+              <a class="chapter__cta" href="https://www.figma.com/deck/sHk7Z87tjLGN7Z24YEl95S/RFA-Case-Study?node-id=3-214&viewport=-109%2C-32%2C0.52&t=fQJXLoEMQVTV8r7p-1&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1" target="_blank" rel="noopener noreferrer">
+                <span class="chapter__cta-label">View case study</span>
+                <span class="chapter__cta-arrow" aria-hidden="true">↗</span>
+              </a>
+              <div class="chapter__cta-aside" aria-hidden="true">
+                <span class="chapter__cta-lock">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+                    <path d="M5 7V5a3 3 0 0 1 6 0v2"/>
+                  </svg>
+                </span>
+                <span class="chapter__cta-note">Request access &mdash; I approve within 24h</span>
+              </div>
+            </div>
           </div>
         </div>
         <figure class="chapter__media">
-          <div class="chapter__placeholder">
-            <span class="chapter__placeholder-label">Ads Incentives — vision deck</span>
-            <span class="chapter__placeholder-note">[ swap with project visual ]</span>
-          </div>
+          <img src="assets/chapter-02-media.jpg" alt="Responsible feature access — silhouetted users at monitors with trust-based access tile" />
         </figure>
       </div>
     </article>
 
-    <!-- ===== CHAPTER 03: TRUST TIERS ===== -->
+    <!-- ===== CHAPTER 03: CASES AND COMMUNITIES IN ADS =====
+         No media yet — shows "Under construction". -->
     <article class="chapter" id="chapter-03" data-chapter="03">
       <div class="chapter__card">
         <div class="chapter__head">
           <div class="chapter__col chapter__col--title">
             <div class="chapter__eyebrow">Chapter 3</div>
             <h3 class="chapter__title" data-split="words">
-              Trust Tiers — a responsible feature framework
+              Cases and Communities in Ads
             </h3>
           </div>
           <div class="chapter__col chapter__col--copy">
             <p class="chapter__body" data-split="words">
-              A progressive-access system controlling how new
-              advertisers earn their way to powerful Ads features —
-              calibrating capability to trust signals at scale across
-              billions in ad spend.
+              Help lived outside the product — tickets in email,
+              communities on a separate platform — so users left Ads
+              to get unstuck, often opening duplicates because they
+              couldn't find what they'd already filed. This work
+              brought both inside, closing a loop that broke every
+              time a user left. First of its kind at Google; now
+              scaling across Advertiser Platforms.
             </p>
-            <a class="chapter__cta" href="#">
-              <span>View case study</span>
-              <span class="chapter__cta-arrow" aria-hidden="true">↗</span>
-            </a>
+            <div class="chapter__cta-group">
+              <a class="chapter__cta" href="https://www.figma.com/deck/3aiBcekfWVwiLKsdlOQGp6/Cases---Communities--Case-Study?node-id=27-900&viewport=-114%2C-23%2C0.54&t=FCVRqh6VWvSyGZuG-1&scaling=min-zoom&content-scaling=fixed&page-id=0%3A1" target="_blank" rel="noopener noreferrer">
+                <span class="chapter__cta-label">View case study</span>
+                <span class="chapter__cta-arrow" aria-hidden="true">↗</span>
+              </a>
+              <div class="chapter__cta-aside" aria-hidden="true">
+                <span class="chapter__cta-lock">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+                    <path d="M5 7V5a3 3 0 0 1 6 0v2"/>
+                  </svg>
+                </span>
+                <span class="chapter__cta-note">Request access &mdash; I approve within 24h</span>
+              </div>
+            </div>
           </div>
         </div>
-        <figure class="chapter__media">
-          <div class="chapter__placeholder">
-            <span class="chapter__placeholder-label">Trust Tiers — framework diagram</span>
-            <span class="chapter__placeholder-note">[ swap with project visual ]</span>
+        <figure class="chapter__media chapter__media--empty">
+          <p class="chapter__construction">Under construction</p>
+        </figure>
+      </div>
+    </article>
+
+    <!-- ===== CHAPTER 04: AGENTIC INVOICE RECONCILIATION =====
+         No media yet — shows "Under construction". -->
+    <article class="chapter" id="chapter-04" data-chapter="04">
+      <div class="chapter__card">
+        <div class="chapter__head">
+          <div class="chapter__col chapter__col--title">
+            <div class="chapter__eyebrow">Chapter 4</div>
+            <h3 class="chapter__title" data-split="words">
+              Agentic invoice reconciliation
+            </h3>
           </div>
+          <div class="chapter__col chapter__col--copy">
+            <p class="chapter__body" data-split="words">
+              Reconciling invoices was manual, fragile work —
+              discrepancies traced one at a time, support tickets
+              piling up while finance teams worked across disconnected
+              tools. This vision proposes an AI agent that cross-checks
+              invoice data, surfaces mismatches, and guides resolution
+              where the work happens. Foundation for AI-led finance
+              across Ads Billing and Payments.
+            </p>
+            <div class="chapter__cta-group">
+              <a class="chapter__cta" href="https://docs.google.com/presentation/d/1Pjp5R39I7n4-l-emJxMgZSwOZd0DgQwmGA2RbSRsJ9c/edit?resourcekey=0-uCYMDvTFjhG-4WpyG9WrPw&slide=id.g3bfc1aa5242_0_525#slide=id.g3bfc1aa5242_0_525" target="_blank" rel="noopener noreferrer">
+                <span class="chapter__cta-label">View case study</span>
+                <span class="chapter__cta-arrow" aria-hidden="true">↗</span>
+              </a>
+              <div class="chapter__cta-aside" aria-hidden="true">
+                <span class="chapter__cta-lock">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="7" width="10" height="7" rx="1.5"/>
+                    <path d="M5 7V5a3 3 0 0 1 6 0v2"/>
+                  </svg>
+                </span>
+                <span class="chapter__cta-note">Request access &mdash; I approve within 24h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <figure class="chapter__media chapter__media--empty">
+          <p class="chapter__construction">Under construction</p>
         </figure>
       </div>
     </article>
@@ -230,31 +311,43 @@
   <!-- ============================================================
        FOOTER
        ============================================================ -->
-  <footer class="footer" id="contact">
-    <div class="footer__inner">
-      <div class="footer__row">
-        <div class="footer__label">— End credits</div>
-        <div class="footer__label">2026</div>
+  <footer class="contact" id="contact">
+
+    <!-- Two-column top: portrait card on left, content stack on right -->
+    <div class="contact__hero">
+
+      <!-- Frosted glass card containing the portrait -->
+      <div class="contact__portrait" aria-hidden="true">
+        <img src="assets/sid-portrait.png" alt="" />
       </div>
-      <h2 class="footer__title" data-split="words">
-        Tell me<br />
-        <em>something&nbsp;true.</em>
-      </h2>
-      <div class="footer__row footer__row--wide">
-        <a href="mailto:hello@example.com" class="footer__email">
-          hello@example.com
-        </a>
-        <ul class="footer__socials">
-          <li><a href="#">Instagram</a></li>
-          <li><a href="#">LinkedIn</a></li>
-          <li><a href="#">Read.cv</a></li>
-        </ul>
+
+      <!-- Right side: title, bio paragraph, links row -->
+      <div class="contact__copy">
+        <h2 class="contact__title">Hit me up</h2>
+        <p class="contact__paragraph">
+          I&rsquo;m a Lead Product Designer with 12+ years of experience
+          across complex, high-impact products. Strong on craft, detail,
+          and the small things that make products feel right. I leverage
+          AI to accelerate execution and bring ideas to life faster.
+          I partner closely across functions and push work to a higher
+          bar. I work closely with cross-functional teams, influence
+          across disciplines, and focus on real impact.
+        </p>
+        <nav class="contact__links" aria-label="Contact links">
+          <a href="mailto:siddharth_chowdhury@yahoo.com" class="contact__link">EMAIL</a>
+          <a href="https://www.linkedin.com/in/siddharthc07" target="_blank" rel="noopener noreferrer" class="contact__link">LINKEDIN</a>
+          <a href="https://drive.google.com/file/d/1XWVxrWzqmQGWQ6ipHSmL3l1KluO8aQZd/view?usp=sharing" target="_blank" rel="noopener noreferrer" class="contact__link">RESUME</a>
+          <a href="https://www.instagram.com/sydrth_/" target="_blank" rel="noopener noreferrer" class="contact__link">INSTAGRAM</a>
+        </nav>
       </div>
-      <div class="footer__fine">
-        <span>© Siddharth · All works shown with permission</span>
-        <span>Built with care in Delhi</span>
-      </div>
+
     </div>
+
+    <!-- Wordmark — high-res asset, displayed at intrinsic size per Sid's spec -->
+    <div class="contact__wordmark" aria-hidden="true">
+      <img src="assets/contact-wordmark.png" alt="" />
+    </div>
+
   </footer>
 
   <script src="vendor/gsap.min.js"></script>

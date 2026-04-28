@@ -44,18 +44,40 @@ const wordmark = document.getElementById('wordmark');
 const pillNav = document.getElementById('pillNav');            // hidden during phase 1
 
 if (video) {
+  video.muted = true;          // ensure muted so play() doesn't get blocked
   video.pause();
   video.load();
+  // Force frame buffering — load() alone doesn't always trigger frame
+  // decoding on file:// protocol or under strict autoplay policies.
+  // play()/pause() forces the browser to actually buffer frames.
+  video.play().then(() => {
+    video.pause();
+    video.currentTime = 0;
+  }).catch(() => {
+    // Autoplay blocked — that's fine, the CSS background-image poster
+    // shows in the meantime, and frames will load on first scroll.
+  });
 }
 
-/* Phase boundaries */
-const P1_END = 0.18;
-const P2_END = 0.38;
-const P3_END = 0.55;
-const P4_END = 0.80;
-const P5_END = 0.92;   /* Hello-I-am-Siddharth holds till here */
-/* 0.92-1.0 = phase 6: video slides UP off screen, revealing the
-   work section gradient + curves underneath. */
+/* Phase boundaries (as fraction of total stage scroll, 0..1).
+   Stage is 650vh tall, so 1% ≈ 6.5vh of scroll.
+
+   Reweighted from the original 500vh balance after Sid flagged both
+   held text frames as transitioning too fast:
+     - P3 (Hold A "Human-first. AI-second.") was 17% = 85vh; now 22%
+       = 143vh, giving the held frame ~70% more dwell.
+     - P5 (Hold B "Hello, I am Siddharth") was 12% = 60vh; now 20%
+       = 130vh, more than doubling its dwell — this was the worst
+       case Sid called out.
+     - P1 unblur, P2 video-scrub-to-1.86s, P4 video-scrub-to-7s, and
+       P6 fade-out get roughly the same vh budget as before, just
+       expressed as smaller % of the now-longer stage. */
+const P1_END = 0.14;   /* unblur */
+const P2_END = 0.30;   /* video scrubs to 1.86s */
+const P3_END = 0.52;   /* Hold A — "Human-first. AI-second." */
+const P4_END = 0.72;   /* video scrubs to 7s, layer A fades out */
+const P5_END = 0.92;   /* Hold B — "Hello, I am Siddharth" */
+/* 0.92-1.0 = phase 6: layer B fades out, video stays put. */
 
 /* Per spec: video ends at 7.0s (not the full 8s) */
 const VIDEO_PAUSE_AT = 1.86;
@@ -152,6 +174,7 @@ ScrollTrigger.create({
       video.style.filter = `blur(${blur}px) saturate(${sat}) brightness(${bright})`;
       video.style.transform = `scale(${scale})`;
       video.currentTime = 0;
+      gsap.set(stage, { opacity: 1 });
       setPhase(1);
     }
     else if (p <= P2_END) {
@@ -160,6 +183,7 @@ ScrollTrigger.create({
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
       video.style.transform = 'scale(1)';
       video.currentTime = VIDEO_PAUSE_AT * t;
+      gsap.set(stage, { opacity: 1 });
       setPhase(2);
     }
     else if (p <= P3_END) {
@@ -167,6 +191,7 @@ ScrollTrigger.create({
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
       video.style.transform = 'scale(1)';
       video.currentTime = VIDEO_PAUSE_AT;
+      gsap.set(stage, { opacity: 1 });
       setPhase(3);
     }
     else if (p <= P4_END) {
@@ -177,6 +202,7 @@ ScrollTrigger.create({
       video.currentTime = VIDEO_PAUSE_AT + ((VIDEO_END_AT - VIDEO_PAUSE_AT) * t);
       // Fade A out manually so it doesn't clash with B
       gsap.set(layerA, { opacity: 1 - t });
+      gsap.set(stage, { opacity: 1 });
       setPhase(4);
     }
     else if (p <= P5_END) {
@@ -189,17 +215,24 @@ ScrollTrigger.create({
       setPhase(5);
     }
     else {
-      // Phase 6: video + Layer B slide UP off screen, revealing the
-      // work section gradient + curves that have been beneath all along.
-      // Stage's whole sticky frame is opacity-faded simultaneously so
-      // any residual silhouette doesn't peek through.
+      // Phase 6: video stays put, ONLY the "Hello, I am Siddharth" text
+      // fades out. Per Sid's spec: the video should not be touched. The
+      // navy strip that appeared between intro and work section is fixed
+      // by the .work__glow gradient layer being always painted at z-index
+      // 0 — there's no longer any moment where solid navy shows alone.
       const t = (p - P5_END) / (1 - P5_END);
-      const eased = t * t * (3 - 2 * t);          // smoothstep
+      const eased = t * t * (3 - 2 * t);
+      // Reset video filter/transform to clean state (no blur, no slide)
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
-      video.style.transform = `scale(1) translateY(${-100 * eased}%)`;
+      video.style.transform = 'scale(1) translateY(0)';
       video.currentTime = VIDEO_END_AT;
       gsap.set(layerA, { opacity: 0 });
-      gsap.set(layerB, { y: -80 * eased, opacity: 1 - eased });
+      // Text fades out as the user scrolls
+      gsap.set(layerB, { opacity: Math.max(0, 1 - eased * 1.6), y: 0 });
+      // Stage stays fully opaque — video remains visible
+      gsap.set(stage, { opacity: 1 });
+      // Reset stage backgroundColor in case a previous turn's code set it
+      stage.style.backgroundColor = '';
       setPhase(6);
     }
   }
@@ -276,32 +309,77 @@ document.querySelectorAll('.chapter').forEach((chapterEl) => {
   });
 });
 
-/* ---------- 7b. Work section backdrop activation ----------
-   Toggle .is-active on .work so the fixed grid + glow fade in only
-   while the user is actually inside the work section. */
+/* ---------- 7b. Work section activation + intro chrome hide ----------
+   Toggle `.is-active` on .work (already used for backdrop fade-in) and
+   `.is-hidden` on the wordmark when the user scrolls past the stage.
+   Also manages the curves visibility window — curves are POSITION FIXED
+   and appear briefly only while user is on My Work; they fizzle out
+   the moment user scrolls toward chapter 1.
+   Implemented with a direct scroll listener (not ScrollTrigger) because
+   ScrollTrigger's computed positions for these elements were unreliable
+   when the layout includes scroll-snap-mandatory + sticky scrub. The
+   live offsetTop+offsetHeight is always correct. */
 const workSection = document.querySelector('.work');
-if (workSection) {
-  ScrollTrigger.create({
-    trigger: workSection,
-    start: 'top 90%',
-    end: 'bottom 10%',
-    onEnter: () => workSection.classList.add('is-active'),
-    onEnterBack: () => workSection.classList.add('is-active'),
-    onLeave: () => workSection.classList.remove('is-active'),
-    onLeaveBack: () => workSection.classList.remove('is-active')
-  });
+const stageEl = document.querySelector('.stage');
+if (workSection && stageEl) {
+  let lastInside = null;
+  let lastNearMyWork = null;
+  let curvesOnTimer = null;
+  function syncIntroChrome() {
+    const stageBottom = stageEl.offsetTop + stageEl.offsetHeight;
+    const vh = window.innerHeight;
+
+    // Work section "active" — past stage by half a viewport
+    const inside = window.scrollY >= stageBottom - vh * 0.5;
+    if (inside !== lastInside) {
+      lastInside = inside;
+      workSection.classList.toggle('is-active', inside);
+      if (wordmark) wordmark.classList.toggle('is-hidden', inside);
+    }
+
+    // Curves window — only visible while user is around My Work.
+    // Lower bound: stage_bottom - 0.3vh (user has crossed into work)
+    // Upper bound: stage_bottom + 0.6vh (still on My Work, not Ch1)
+    const nearMyWork = window.scrollY >= stageBottom - vh * 0.3
+                    && window.scrollY <= stageBottom + vh * 0.6;
+    if (nearMyWork !== lastNearMyWork) {
+      lastNearMyWork = nearMyWork;
+      // Clear any pending timer
+      if (curvesOnTimer) { clearTimeout(curvesOnTimer); curvesOnTimer = null; }
+      if (nearMyWork) {
+        // 700ms delay after landing — gives My Work title room to settle
+        // before the curves come in. Forward scroll feels like: arrive,
+        // beat, curves drift in.
+        curvesOnTimer = setTimeout(() => {
+          document.body.classList.add('is-curves-on');
+        }, 700);
+      } else {
+        // Off immediately when user starts scrolling away — curves
+        // fizzle out (CSS opacity transition) so chapter 1 emerges clean.
+        document.body.classList.remove('is-curves-on');
+      }
+    }
+  }
+  window.addEventListener('scroll', syncIntroChrome, { passive: true });
+  window.addEventListener('resize', syncIntroChrome);
+  syncIntroChrome();
 }
 
 /* ---------- 9. Pill-nav active section tracking ---------- */
 const sections = [
-  { id: 'stage', nav: 'intro' },
-  { id: 'work', nav: 'work' }
-  // Contact is reached via CTA button — no nav link to highlight.
+  { id: 'stage',   nav: 'intro' },
+  { id: 'work',    nav: 'work' },
+  // Contact: neither pill represents this section (the contact CTA on
+  // the right is a separate button). When the user scrolls into the
+  // footer, we clear ALL pill highlights so it doesn't look like Work
+  // is still selected. Passing null tells setActiveNav to deactivate
+  // every pill.
+  { id: 'contact', nav: null }
 ];
 
 function setActiveNav(navKey) {
   document.querySelectorAll('.pill-nav__link').forEach(link => {
-    link.classList.toggle('is-active', link.dataset.nav === navKey);
+    link.classList.toggle('is-active', navKey !== null && link.dataset.nav === navKey);
   });
 }
 
