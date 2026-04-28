@@ -439,11 +439,10 @@ em { font-style: italic; }
 .hero-a__title {
   font-family: var(--display);
   font-weight: 300;
-  /* Updated mock pushes this lockup noticeably larger while keeping
-     the same bottom-left anchor. */
-  font-size: clamp(2.7rem, 8.2vw, 8.75rem);
-  line-height: 0.96;
-  letter-spacing: -0.03em;
+  /* Reduced 20% from previous clamp(2.8rem, 8.6vw, 8rem). */
+  font-size: clamp(2.24rem, 6.88vw, 6.4rem);
+  line-height: 1.02;             /* slightly looser to give the f-tail room visually */
+  letter-spacing: -0.025em;
   color: var(--white);
   max-width: 16ch;
   font-style: normal;            /* "Human-first." stays upright */
@@ -486,9 +485,9 @@ em { font-style: italic; }
 .glass-card__title {
   font-family: var(--sans);
   font-weight: 700;                            /* Bold — heaviest weight loaded */
-  font-size: clamp(1.95rem, 3.7vw, 4.15rem);
-  line-height: 0.97;
-  letter-spacing: -0.02em;
+  font-size: clamp(1.7rem, 2.4vw, 2.3rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;                     /* tighter — adds visual heft to compensate */
   text-transform: uppercase;
   color: var(--white);
   text-align: right;
@@ -498,9 +497,9 @@ em { font-style: italic; }
   margin-top: 12px;
   font-family: var(--sans);
   font-weight: 700;                            /* bold per latest spec */
-  /* Sized to sit as a quieter but still readable signature line. */
-  font-size: clamp(0.98rem, 1.35vw, 1.55rem);
-  letter-spacing: 0.03em;
+  /* Sized to ~0.54x of title — matches mock proportion */
+  font-size: clamp(1rem, 1.3vw, 1.25rem);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   /* Desaturated pale-blue-gray, sits quietly against the video */
   color: rgba(216, 226, 236, 0.55);
