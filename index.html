@@ -8,7 +8,19 @@
 
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="is-loading">
+
+  <!-- ===== Loading gate =====
+       Shown until the hero video has decoded its first frame and
+       buffered enough to start scrub-playing without stalling. Body
+       gets `.is-loading` until JS confirms the video is ready, which
+       (a) blocks page scroll via overflow:hidden, and (b) shows this
+       LOADING affordance. Aim is to avoid the "scroll feels glitchy"
+       moment where the user starts dragging before the 13MB video
+       has buffered. -->
+  <div class="page-loader" id="pageLoader" aria-live="polite" aria-label="Loading">
+    <span class="page-loader__label">LOADING</span>
+  </div>
 
   <!-- ===== Wordmark — top-left, scales down on scroll =====
        Image asset replaces the previous text+span construction so the
@@ -63,7 +75,7 @@
 
         <div class="glass-card">
           <div class="glass-card__title">Lead UX<br />Designer</div>
-          <div class="glass-card__sub">at google.</div>
+          <div class="glass-card__sub">at google</div>
         </div>
       </div>
 

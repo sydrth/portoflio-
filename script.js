@@ -4,6 +4,71 @@
 
 gsap.registerPlugin(ScrollTrigger);
 
+/* ---------- 0. Page loader / video readiness gate ----------
+   Hide the loader and unlock scroll once the hero video is ready
+   to scrub smoothly. "Ready" = first frame decoded AND ≥3 seconds
+   of forward buffer, OR 8-second fallback timeout. The fallback
+   matters for slow connections / cached states / errors — we never
+   want the user stuck on the loader forever.
+
+   Also: if the page restored at a non-zero scroll position (e.g.
+   reload-while-mid-scroll), don't bother locking — the user is
+   already past the stage and won't see the loader meaningfully. */
+(function pageLoadGate() {
+  const body = document.body;
+  const video = document.getElementById('heroVideo');
+
+  // Edge case: scroll already past zero-state? Just release.
+  if (window.scrollY > 100) {
+    body.classList.remove('is-loading');
+    return;
+  }
+
+  // Minimum show duration so cached/instant-ready cases don't flash
+  // the loader for 50ms (looks janky, like a glitch). 400ms reads
+  // as "intentional brief moment of orientation."
+  const startTime = performance.now();
+  const MIN_SHOW_MS = 400;
+  const MAX_WAIT_MS = 8000;
+  let released = false;
+
+  function release() {
+    if (released) return;
+    released = true;
+    const elapsed = performance.now() - startTime;
+    const remaining = Math.max(0, MIN_SHOW_MS - elapsed);
+    setTimeout(() => {
+      body.classList.remove('is-loading');
+      // After the loader's transition finishes (matches CSS 0.5s),
+      // refresh ScrollTrigger so any layout-dependent calculations
+      // recompute against the now-unlocked body height.
+      setTimeout(() => ScrollTrigger.refresh(), 550);
+    }, remaining);
+  }
+
+  function checkReady() {
+    if (!video) return release();          // no video element? release
+    if (video.readyState < 2) return;      // need at least HAVE_CURRENT_DATA
+    // Has the video buffered ≥3s of forward content?
+    const buf = video.buffered;
+    if (buf.length === 0) return;
+    const bufferedEnd = buf.end(buf.length - 1);
+    if (bufferedEnd >= 3 || bufferedEnd >= video.duration) release();
+  }
+
+  if (video) {
+    video.addEventListener('loadeddata', checkReady);
+    video.addEventListener('progress', checkReady);
+    video.addEventListener('canplay', checkReady);
+    video.addEventListener('error', release); // failure → release anyway
+    // Already-cached video may have fired loadeddata before we attached
+    if (video.readyState >= 2) checkReady();
+  }
+
+  // Hard ceiling — release no matter what after MAX_WAIT_MS
+  setTimeout(release, MAX_WAIT_MS);
+})();
+
 /* ---------- 1. Split text helpers ---------- */
 function splitWords(el) {
   const html = el.innerHTML;
