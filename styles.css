@@ -323,6 +323,19 @@ em { font-style: italic; }
   animation: none;
 }
 
+/* Variant for the My Work intro panel — same visual hint, but
+   anchored inside the panel rather than the stage's sticky container.
+   JS toggles .is-faded based on whether the panel is on screen. */
+.stage__scroll-hint--work {
+  /* Pinned to the bottom of the My Work panel rather than the
+     viewport; appears when the panel is in view and fades when the
+     user continues scrolling toward chapter 1. */
+  z-index: 5;  /* above curves and any panel chrome */
+  /* Re-apply the fade-in animation specifically to this instance —
+     the parent rule already declares it but we want it to start
+     when the panel becomes visible, which JS controls via classes. */
+}
+
 @keyframes scroll-hint-fade-in {
   to { opacity: 1; }
 }
@@ -494,15 +507,15 @@ em { font-style: italic; }
 .stage__layer--b {
   display: flex;
   align-items: center;
-  /* Position the column equidistant between the subject's right edge
-     (~58% across) and the viewport right edge (100%). The midpoint of
-     that 42% gap sits at ~79% across. We place the column there using
-     a calculated right padding that keeps the gaps symmetric: with a
-     400px column and 1440px viewport, padding-right ~100px lands the
-     left edge at ~940 and the right edge at ~1340 — gap to subject ~110,
-     gap to viewport edge ~100. Visually equidistant. */
+  /* Per Sid: title block was sitting too close to the right viewport
+     edge — visually unbalanced relative to its distance from the
+     subject. With a 1440px viewport, subject right edge ~700px and
+     column width ~375px, the available space (740px) divided minus
+     the column (375) leaves 365 to split. Splitting evenly: ~180px
+     each side. Bumping padding-right from 100 → 180 brings the block
+     to a visually equidistant position between subject and viewport. */
   justify-content: flex-end;
-  padding: 0 100px 0 0;
+  padding: 0 180px 0 0;
 }
 
 .stage__layer--b .hero-b {
@@ -1302,11 +1315,17 @@ body.is-curves-on .curves {
 /* ========= REDUCED MOTION =========
    Always last — these rules need highest specificity for accessibility. */
 
-/* ===== MOBILE — iPhone 17 / phones ≤ 480px =====
-   This block targets phones only. The earlier @media (max-width: 900px)
-   block above catches tablets but is mostly stale code; this block
-   overrides it where the mocks specify mobile-specific layout. Desktop
-   (above 900px) is unaffected.
+/* ===== MOBILE — phones & narrow tablets ≤ 768px =====
+   This block targets phones and narrow tablets. The earlier
+   @media (max-width: 900px) block above catches wider tablets but is
+   mostly stale code; this block overrides it where the mocks specify
+   mobile-specific layout. Desktop (above 768px) is unaffected.
+
+   Breakpoint widened from 480px → 768px after Sid flagged mobile
+   wasn't taking effect — the original 480px was too narrow to catch
+   common devices in browser dev-tools emulation modes. iPhone 17 is
+   402px so it was matching, but anything wider (Pixel 8 Pro at 412px
+   IS still under, but iPad Mini portrait at 768px wasn't) wouldn't.
 
    Per Sid's mocks (iPhone 17 = 402×874pt) and explicit decisions:
      - Hide pill nav entirely on mobile.
@@ -1320,24 +1339,31 @@ body.is-curves-on .curves {
        wraps below button at narrow widths via existing flex-wrap rule.
      - Contact: portrait stacks ABOVE the copy, everything centered,
        RESUME link hidden via .contact__link--desktop-only. */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
 
   /* ----- Hide pill nav on mobile ----- */
   .pill-nav { display: none !important; }
 
-  /* ----- Wordmark: scale up significantly per mock 1/2 ----- */
+  /* ----- Wordmark: keep full size on mobile -----
+     Desktop has a JS-driven scrub that scales the wordmark from 1.0
+     down to 0.42 across phase 4 of the stage timeline. On mobile per
+     Sid's spec, the wordmark stays at full size throughout — the
+     scrub doesn't shrink it. We use `!important` on transform here
+     to beat the inline `style.setProperty('--wordmark-scale', X)`
+     that JS writes; the inline style sets the variable but doesn't
+     touch transform directly, so this rule wins. */
   .wordmark {
     left: 20px;
     top: 20px;
-    /* Override the desktop scale variable so it reads as a strong
-       brand mark in the corner rather than a small badge. */
-    --wordmark-scale: 1;
+    transform: scale(1) !important;
   }
   .wordmark__svg {
-    /* Mock shows "sydrth.*" at roughly 200px wide on a 402px viewport.
-       Scaling up the SVG container does this without touching the
-       desktop sizing logic. */
-    width: clamp(180px, 52vw, 220px);
+    /* Mock 2 shows the wordmark at ~46% of viewport width on iPhone 17
+       (375px on a 804px-wide mock = ~46.6%). At a 402px iPhone viewport
+       that's ~187px — but mock 2 looks bigger than my prior 180-220px
+       cap. Bumping target width to ~52% of viewport with a higher
+       ceiling so it reads as a strong brand mark, not a small badge. */
+    width: clamp(200px, 56vw, 260px);
     height: auto;
   }
 
@@ -1346,7 +1372,19 @@ body.is-curves-on .curves {
 
   /* ----- Layer A: "Human-first. AI-second." + glass card -----
      Mock 1: title left-aligned in lower-middle, glass card bottom-right
-     as a compact tile. */
+     as a compact tile.
+
+     Force-hide Layer A in phases 5 and 6 — without this, GSAP's
+     opacity tween on layer A occasionally fails to land at 0 on
+     mobile, leaving "Human-first. AI-second." visible behind
+     "Hello, I am Siddharth." Hooking into the body data-phase set
+     by setPhase() in script.js. */
+  body[data-stage-phase="5"] .stage__layer--a,
+  body[data-stage-phase="6"] .stage__layer--a {
+    opacity: 0 !important;
+    visibility: hidden;
+  }
+
   .stage__layer--a {
     /* Was grid 1fr auto bottom-aligned. Now: full-viewport relative
        container so we can absolutely position the title and card. */
@@ -1392,23 +1430,43 @@ body.is-curves-on .curves {
   }
   .stage__layer--b .hero-b {
     position: absolute;
-    left: 20px;
-    right: 20px;
-    /* Vertically a bit above center per mock — title takes upper half,
-       body sits directly under it. */
-    top: 50%;
-    transform: translateY(-50%);
+    /* Per mock 2: title block starts ~28px from left edge (slightly
+       wider gutter than the 20px wordmark gutter — keeps the title
+       optically aligned with the wordmark's letter-strokes, not its
+       SVG bounding box). Title block extends close to the right edge
+       so the body paragraph below has enough horizontal room to wrap
+       at ~6 lines like the mock. */
+    left: 28px;
+    right: 28px;
+    /* Override the base `.hero-b` desktop rule that caps width at
+       min(34%, 480px) — that produced ~137px on a 402px viewport,
+       making the body wrap at ~14 chars per line. We want the wrapper
+       to fill the full gutter-bounded width on mobile. */
+    width: auto;
+    /* Title sits ~42% down the viewport per mock 2. The wrapper holds
+       title above body with the existing 16px gap. We anchor at top
+       (not center) so adding more body content doesn't reposition the
+       title relative to the subject behind it. */
+    top: 42%;
+    transform: none;
     max-width: none;
   }
   .hero-b__title {
-    font-size: clamp(2.4rem, 11vw, 3.4rem);
+    /* Mock 2 title looks ~58-62px / ~3.7rem. Bumping the clamp ceiling
+       to land in that range on iPhone 17 (402px viewport) where 14vw
+       = 56px. */
+    font-size: clamp(2.8rem, 14vw, 3.8rem);
     line-height: 1.0;
     max-width: 86vw;
   }
   .hero-b__intro {
+    /* Mock 2 body wraps at ~28-32 chars per line ("As the UX Lead for
+       Google Ads /"). With `.hero-b` at 346px wide (left+right 28px
+       gutters on 402px viewport), letting the body fill 100% of the
+       wrapper produces that wrap pattern naturally. */
     font-size: 0.95rem;
     line-height: 1.45;
-    max-width: 86vw;
+    max-width: 100%;
     margin-top: 20px;
   }
 
@@ -1461,7 +1519,10 @@ body.is-curves-on .curves {
   .contact__hero {
     /* Stack: portrait first, then copy. */
     grid-template-columns: 1fr;
-    gap: 36px;
+    /* Mock 5: portrait → "Hit me up" gap is generous. 48px lands
+       comfortably between the two; less feels cramped, more makes
+       the portrait look detached. */
+    gap: 48px;
     max-width: none;
     justify-content: stretch;
   }
@@ -1474,17 +1535,27 @@ body.is-curves-on .curves {
     justify-self: center;
   }
   .contact__copy {
-    /* Mock shows everything centered on mobile. */
+    /* Mock shows everything centered on mobile.
+       Override the desktop's uniform 24px column gap so we can space
+       each element to mock 5's balance: tight title→bio, generous
+       bio→links. */
     align-items: center;
     text-align: center;
+    gap: 0;
   }
   .contact__title {
     font-size: clamp(2rem, 9vw, 2.6rem);
     text-align: center;
+    /* Tight gap to bio paragraph below — mock shows ~14-18px. */
+    margin-bottom: 18px;
   }
   .contact__paragraph {
     text-align: center;
     font-size: 0.95rem;
+    /* Generous gap before the links row — mock 5 has roughly 50px
+       between the last line of bio and the EMAIL/INSTAGRAM/LINKEDIN
+       row. This breathing room is what makes the layout feel balanced. */
+    margin-bottom: 48px;
   }
   .contact__links {
     /* Three links spread evenly with smaller gap than desktop. */
@@ -1506,14 +1577,15 @@ body.is-curves-on .curves {
   /* Email needs to stay first — give it a smaller order than Instagram. */
   .contact__link[href^="mailto"] { order: -2; }
 
-  /* ----- Wordmark at footer: per mock, bleeds off the bottom edges
-           (i.e. larger than viewport width so left/right glyphs are
-           clipped slightly by the screen edges). ----- */
+  /* ----- Wordmark at footer: per Sid's update — keep inside viewport
+           horizontally (no left/right clipping). Only the BOTTOM is
+           allowed to clip by sitting flush at the contact section's
+           bottom edge. Width capped at viewport width with auto margins
+           so it stays centered. ----- */
   .contact__wordmark img {
-    /* Larger than viewport so it bleeds off edges per mock 5. */
-    width: 110%;
-    max-width: 110%;
-    margin-left: -5%;
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
   }
 }
 

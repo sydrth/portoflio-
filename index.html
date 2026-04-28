@@ -141,6 +141,18 @@
           publicly accessible &mdash; tap "View case study" to request access.
         </p>
       </div>
+
+      <!-- Second scroll hint, anchored to the My Work intro panel so
+           it reappears here when the user reaches this section. Fades
+           the moment they start scrolling further (toward chapter 1).
+           Reuses the same .stage__scroll-hint visual styles for
+           consistency, with a section-bound modifier for positioning. -->
+      <div class="stage__scroll-hint stage__scroll-hint--work" id="workScrollHint" aria-hidden="true">
+        <div class="stage__scroll-hint-mouse">
+          <span class="stage__scroll-hint-dot"></span>
+        </div>
+        <span class="stage__scroll-hint-label">SCROLL</span>
+      </div>
     </div>
 
     <!-- ===== CHAPTER 01: REFRAMING BILLING IN GOOGLE ADS =====

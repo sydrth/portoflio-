@@ -121,6 +121,13 @@ function setPhase(p) {
   if (p === lastPhase) return;
   lastPhase = p;
 
+  /* Stamp current phase on <body> so CSS can hook into it. Used by
+     the mobile breakpoint to hard-hide Layer A in phases 5 and 6,
+     where GSAP's opacity tween was unreliable (layer A would stay
+     at opacity 1 even though phase logic set it to 0, causing both
+     "Human-first." and "Hello, I am Siddharth" to render at once). */
+  document.body.dataset.stagePhase = p;
+
   // Layer A visible during phase 3 only
   if (p === 3) tlA.play();
   else if (p < 3) tlA.reverse();
@@ -156,12 +163,12 @@ function updateWordmark(p) {
 let videoDuration = VIDEO_END_AT;  // we cap at 7s anyway
 
 /* Scroll affordance — visible during the zero-state, fades on first
-   scroll past a small threshold and then stays hidden permanently
-   (no point reminding someone they can scroll once they've shown
-   they can). */
+   scroll past a small threshold. Per Sid's update: it should also
+   REAPPEAR if the user scrolls back to the very top, so we removed
+   the previous one-shot latch and now toggle .is-faded purely as a
+   function of current stage scroll progress. */
 const scrollHint = document.getElementById('scrollHint');
-let scrollHintFaded = false;
-const SCROLL_HINT_FADE_AT = 0.005;  /* 0.5% of stage scroll */
+const SCROLL_HINT_FADE_AT = 0.01;  /* 1% of stage scroll */
 
 ScrollTrigger.create({
   trigger: stage,
@@ -172,11 +179,15 @@ ScrollTrigger.create({
     const p = self.progress;
     updateWordmark(p);
 
-    /* Fade the scroll hint on first meaningful scroll. Latching once
-       so it never reappears even if the user scrolls back to top. */
-    if (!scrollHintFaded && p > SCROLL_HINT_FADE_AT && scrollHint) {
-      scrollHint.classList.add('is-faded');
-      scrollHintFaded = true;
+    /* Toggle the hint based on current scroll position. When the user
+       drops back below the threshold, the hint reappears — useful if
+       someone scrolls back up to the zero state. */
+    if (scrollHint) {
+      if (p > SCROLL_HINT_FADE_AT) {
+        scrollHint.classList.add('is-faded');
+      } else {
+        scrollHint.classList.remove('is-faded');
+      }
     }
 
     if (p <= P1_END) {
@@ -336,6 +347,7 @@ document.querySelectorAll('.chapter').forEach((chapterEl) => {
    live offsetTop+offsetHeight is always correct. */
 const workSection = document.querySelector('.work');
 const stageEl = document.querySelector('.stage');
+const workScrollHint = document.getElementById('workScrollHint');
 if (workSection && stageEl) {
   let lastInside = null;
   let lastNearMyWork = null;
@@ -373,6 +385,18 @@ if (workSection && stageEl) {
         // fizzle out (CSS opacity transition) so chapter 1 emerges clean.
         document.body.classList.remove('is-curves-on');
       }
+    }
+
+    // Work-section scroll hint: visible when user has just arrived on
+    // My Work (within ~0.3vh of section top), fades as they continue
+    // scrolling toward chapter 1. Like the stage hint, it REAPPEARS
+    // when the user scrolls back into the early window — symmetric
+    // with the stage hint's bidirectional behavior.
+    if (workScrollHint) {
+      const workHintVisible =
+        window.scrollY >= stageBottom - vh * 0.2 &&
+        window.scrollY <= stageBottom + vh * 0.25;
+      workScrollHint.classList.toggle('is-faded', !workHintVisible);
     }
   }
   window.addEventListener('scroll', syncIntroChrome, { passive: true });
