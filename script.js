@@ -155,6 +155,14 @@ function updateWordmark(p) {
 /* ---------- 5. Main scroll handler ---------- */
 let videoDuration = VIDEO_END_AT;  // we cap at 7s anyway
 
+/* Scroll affordance — visible during the zero-state, fades on first
+   scroll past a small threshold and then stays hidden permanently
+   (no point reminding someone they can scroll once they've shown
+   they can). */
+const scrollHint = document.getElementById('scrollHint');
+let scrollHintFaded = false;
+const SCROLL_HINT_FADE_AT = 0.005;  /* 0.5% of stage scroll */
+
 ScrollTrigger.create({
   trigger: stage,
   start: 'top top',
@@ -163,6 +171,13 @@ ScrollTrigger.create({
   onUpdate: (self) => {
     const p = self.progress;
     updateWordmark(p);
+
+    /* Fade the scroll hint on first meaningful scroll. Latching once
+       so it never reappears even if the user scrolls back to top. */
+    if (!scrollHintFaded && p > SCROLL_HINT_FADE_AT && scrollHint) {
+      scrollHint.classList.add('is-faded');
+      scrollHintFaded = true;
+    }
 
     if (p <= P1_END) {
       // Phase 1: unblur, locked at 0

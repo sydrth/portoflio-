@@ -278,6 +278,104 @@ em { font-style: italic; }
   overflow: hidden;
 }
 
+/* ===== SCROLL HINT =====
+   Subtle scroll affordance shown during the stage's zero-state.
+   Sits bottom-center of the sticky viewport so it travels with the
+   video. Fades to 0 the moment the user begins scrolling — script.js
+   toggles `.is-faded` based on stage scroll progress. Once faded,
+   stays hidden for the rest of the visit. */
+.stage__scroll-hint {
+  position: absolute;
+  /* Bottom-center of the viewport. The 56px clearance keeps it above
+     the bottom edge so it doesn't kiss anything; large enough to feel
+     intentional without crowding the wordmark or pill nav. */
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  /* Stack: pill mouse glyph above, label below. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  /* Quiet on the dark navy — desaturated steel-teal that reads as a
+     UI hint rather than competing with the wordmark or any layer text. */
+  color: rgba(184, 211, 230, 0.55);
+  /* Above the video and vignette but below the layer text. */
+  z-index: 4;
+  pointer-events: none;
+  /* Initial fade-IN so it doesn't pop on page load — eases up to full
+     opacity over the first ~600ms of viewing. */
+  opacity: 0;
+  animation: scroll-hint-fade-in 0.8s 0.4s var(--ease-out-soft) forwards;
+  transition: opacity 0.5s var(--ease-out-soft),
+              transform 0.5s var(--ease-out-soft);
+}
+
+/* Fade-out state: triggered by JS the moment the user starts scrolling.
+   Once applied, the hint never returns — even if the user scrolls back
+   to the top, this class stays on. */
+.stage__scroll-hint.is-faded {
+  opacity: 0 !important;
+  /* Tiny downward drift on fade-out — feels like the hint is "going
+     away" because the user did the thing it asked for. */
+  transform: translateX(-50%) translateY(8px);
+  /* Disable the dot animation once hidden so it's not running invisibly. */
+  animation: none;
+}
+
+@keyframes scroll-hint-fade-in {
+  to { opacity: 1; }
+}
+
+/* The pill outline ("mouse" body) — slim 1px stroke, rounded ends. */
+.stage__scroll-hint-mouse {
+  position: relative;
+  width: 26px;
+  height: 42px;
+  border: 1.5px solid currentColor;
+  border-radius: 14px;
+}
+
+/* The animated dot inside the pill. Drifts down on a 1.6s loop to
+   suggest "scroll downward". Pure CSS, no JS. */
+.stage__scroll-hint-dot {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+  animation: scroll-hint-dot 1.6s var(--ease-out-soft) infinite;
+}
+
+@keyframes scroll-hint-dot {
+  /* Start near the top, drift down, fade out near the bottom, reset. */
+  0%   { transform: translate(-50%, 0); opacity: 0; }
+  20%  { opacity: 1; }
+  70%  { transform: translate(-50%, 16px); opacity: 1; }
+  100% { transform: translate(-50%, 22px); opacity: 0; }
+}
+
+.stage__scroll-hint-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  /* Optical balance — wide letter-spacing pushes mass right of center. */
+  padding-left: 0.32em;
+}
+
+/* Reduced motion: keep the hint visible but stop animating the dot. */
+@media (prefers-reduced-motion: reduce) {
+  .stage__scroll-hint {
+    animation: none;
+    opacity: 1;
+  }
+  .stage__scroll-hint-dot { animation: none; }
+}
+
 .stage__video {
   position: absolute;
   inset: 0;

@@ -83,12 +83,25 @@
           </p>
         </div>
       </div>
+      <!-- ===== SCROLL HINT =====
+           Subtle affordance shown during the stage's zero-state (Phase 1)
+           so visitors know the intro is scroll-driven. Sits bottom-center
+           in the sticky container, fades out the moment the user starts
+           scrolling (script.js handles the fade by toggling .is-faded
+           when stage progress passes the fade threshold). Once faded,
+           stays hidden — no need to remind the visitor twice. -->
+      <div class="stage__scroll-hint" id="scrollHint" aria-hidden="true">
+        <div class="stage__scroll-hint-mouse">
+          <span class="stage__scroll-hint-dot"></span>
+        </div>
+        <span class="stage__scroll-hint-label">SCROLL</span>
+      </div>
     </div>
   </section>
 
   <!-- ============================================================
        WORK SECTION
-       — "My Work" intro panel followed by 3 chapter cards.
+       — "My Work" intro panel followed by 4 chapter cards.
        Each chapter is a full-viewport sharp-rectangle dark-glass card
        sitting on a deep-navy backdrop with a subtle blueprint grid.
        ============================================================ -->
