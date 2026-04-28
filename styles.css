@@ -439,10 +439,11 @@ em { font-style: italic; }
 .hero-a__title {
   font-family: var(--display);
   font-weight: 300;
-  /* Reduced 20% from previous clamp(2.8rem, 8.6vw, 8rem). */
-  font-size: clamp(2.24rem, 6.88vw, 6.4rem);
-  line-height: 1.02;             /* slightly looser to give the f-tail room visually */
-  letter-spacing: -0.025em;
+  /* Updated mock pushes this lockup noticeably larger while keeping
+     the same bottom-left anchor. */
+  font-size: clamp(2.7rem, 8.2vw, 8.75rem);
+  line-height: 0.96;
+  letter-spacing: -0.03em;
   color: var(--white);
   max-width: 16ch;
   font-style: normal;            /* "Human-first." stays upright */
@@ -458,47 +459,52 @@ em { font-style: italic; }
    bright on every edge — no top-heavy inset highlight). Card body lifts
    the backdrop slightly via low-opacity white + saturation bump from
    backdrop-filter. */
+/* --- "Lead UX Designer / at google" callout ---
+   Per Sid's update: glass tile chrome (background, backdrop-filter,
+   border, shadow) is stripped — just naked text, right-aligned,
+   pinned to the lower-right of layer A. The previous tile aesthetic
+   was making the moment feel boxed-in; the bare typography reads
+   cleaner against the video. */
 .glass-card {
   position: relative;
   align-self: end;
-  /* Vertical padding reduced 33% (48 → 32) to shrink card height ~20%
-     overall while keeping horizontal padding the same so word-wrap is
-     unchanged. Edge distance unchanged (stays anchored to layer's
-     padding 48px from bottom and right). */
-  padding: 32px 44px;
-  min-width: 320px;
-  border-radius: 0;                            /* sharp rectangle per mock */
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
-  /* Single visible hairline on all sides — matches mock exactly */
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  /* Subtle outer shadow only; no inset top-only highlight that would
-     make the top edge look brighter than the others. */
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.10);
+  /* Padding zeroed — card-as-container is gone, this is just a text
+     block now. Bottom/right anchoring still comes from the parent
+     `.stage__layer--a` grid's padding and align/justify-self below. */
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  /* Both lines right-aligned per mock. */
+  text-align: right;
   color: var(--white);
 }
 
 .glass-card__title {
   font-family: var(--sans);
   font-weight: 700;                            /* Bold — heaviest weight loaded */
-  font-size: clamp(1.7rem, 2.4vw, 2.3rem);
-  line-height: 1.05;
-  letter-spacing: -0.01em;                     /* tighter — adds visual heft to compensate */
+  font-size: clamp(2.25rem, 4.25vw, 4.9rem);
+  line-height: 0.96;
+  letter-spacing: -0.025em;
   text-transform: uppercase;
   color: var(--white);
+  text-align: right;
 }
 
 .glass-card__sub {
-  margin-top: 12px;
+  margin-top: 14px;
   font-family: var(--sans);
   font-weight: 700;                            /* bold per latest spec */
-  /* Sized to ~0.54x of title — matches mock proportion */
-  font-size: clamp(1rem, 1.3vw, 1.25rem);
-  letter-spacing: 0.04em;
+  /* Sized to sit as a quieter but still readable signature line. */
+  font-size: clamp(1.15rem, 1.7vw, 2rem);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  /* Desaturated pale-blue-gray, sits quietly inside the card */
+  /* Desaturated pale-blue-gray, sits quietly against the video */
   color: rgba(216, 226, 236, 0.55);
+  text-align: right;
 }
 
 /* ----- LAYER B: "Hello, I am Siddharth." + intro paragraph
@@ -1287,7 +1293,7 @@ body.is-curves-on .curves {
     padding: 0 20px 40px;
     align-items: end;
   }
-  .glass-card { min-width: auto; padding: 20px 24px; align-self: start; justify-self: end; }
+  .glass-card { min-width: auto; padding: 0; align-self: start; justify-self: end; }
   .stage__layer--b {
     grid-template-columns: 1fr;
     gap: 32px;
@@ -1405,12 +1411,13 @@ body.is-curves-on .curves {
     position: absolute;
     right: 20px;
     bottom: 32px;
-    /* Compact tile per mock 1 — much smaller than desktop's 320px min. */
+    /* Chrome is now gone (no background, border, shadow) — so no
+       padding either; just naked text pinned to lower-right. The
+       max-width constrains how wide the title wraps so "LEAD UX /
+       DESIGNER" still stacks to two lines like the mock. */
     min-width: 0;
-    padding: 18px 22px;
-    /* Constrain so title wraps to two lines like the mock: "LEAD UX /
-       DESIGNER" stacked. */
-    max-width: 200px;
+    padding: 0;
+    max-width: 180px;
   }
   .glass-card__title {
     font-size: 1.15rem;
