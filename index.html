@@ -27,7 +27,7 @@
        asterisk renders at its designed proportions. The <a> still owns
        the transform; the <img> just fills it. -->
   <a href="#" class="wordmark" id="wordmark" aria-label="sydrth — home">
-    <img src="assets/sydrth-logo.png" alt="sydrth" class="wordmark__img" />
+    <img src="assets/sydrth-logo.png" alt="sydrth" class="wordmark__img" draggable="false" />
   </a>
 
   <!-- ===== Pill nav — top-right, sticky =====
@@ -61,7 +61,10 @@
         class="stage__video"
         id="heroVideo"
         muted playsinline preload="auto"
-        poster="assets/hero-poster.jpg">
+        poster="assets/hero-poster.jpg"
+        controlsList="nodownload nofullscreen noremoteplayback"
+        disablePictureInPicture
+        disableRemotePlayback>
         <source src="assets/hero.mp4" type="video/mp4" />
       </video>
       <div class="stage__vignette" aria-hidden="true"></div>
@@ -205,7 +208,7 @@
           </div>
         </div>
         <figure class="chapter__media">
-          <img src="assets/chapter-01-media.jpg" alt="Reframing billing in Google Ads — AI Mode concept with ROI summary card" />
+          <img src="assets/chapter-01-media.jpg" alt="Reframing billing in Google Ads — AI Mode concept with ROI summary card" draggable="false" />
         </figure>
       </div>
     </article>
@@ -249,7 +252,7 @@
           </div>
         </div>
         <figure class="chapter__media">
-          <img src="assets/chapter-02-media.jpg" alt="Responsible feature access — silhouetted users at monitors with trust-based access tile" />
+          <img src="assets/chapter-02-media.jpg" alt="Responsible feature access — silhouetted users at monitors with trust-based access tile" draggable="false" />
         </figure>
       </div>
     </article>
@@ -354,7 +357,7 @@
 
       <!-- Frosted glass card containing the portrait -->
       <div class="contact__portrait" aria-hidden="true">
-        <img src="assets/sid-portrait.png" alt="" />
+        <img src="assets/sid-portrait.png" alt="" draggable="false" />
       </div>
 
       <!-- Right side: title, bio paragraph, links row -->
@@ -381,7 +384,7 @@
 
     <!-- Wordmark — high-res asset, displayed at intrinsic size per Sid's spec -->
     <div class="contact__wordmark" aria-hidden="true">
-      <img src="assets/contact-wordmark.png" alt="" />
+      <img src="assets/contact-wordmark.png" alt="" draggable="false" />
     </div>
 
   </footer>

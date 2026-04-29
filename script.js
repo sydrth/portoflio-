@@ -4,6 +4,29 @@
 
 gsap.registerPlugin(ScrollTrigger);
 
+/* ---------- Asset protection (friction layer) ----------
+   Block right-click context menu and drag-start on <img> and
+   <video> elements only. Targeted (not site-wide) so legitimate
+   right-click on links and text still works. This is a deterrent,
+   NOT real protection — DevTools always wins. Pairs with the
+   CSS rules in styles.css that disable user-select, drag, and the
+   iOS long-press callout. */
+(function protectMedia() {
+  const block = (e) => { e.preventDefault(); return false; };
+  document.addEventListener('contextmenu', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'IMG' || t.tagName === 'VIDEO')) {
+      block(e);
+    }
+  });
+  document.addEventListener('dragstart', (e) => {
+    const t = e.target;
+    if (t && (t.tagName === 'IMG' || t.tagName === 'VIDEO')) {
+      block(e);
+    }
+  });
+})();
+
 /* ---------- 0. Page loader / video readiness gate ----------
    Hide the loader and unlock scroll once the hero video is ready
    to scrub smoothly. "Ready" = first frame decoded AND ≥3 seconds

@@ -76,6 +76,34 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ===== ASSET PROTECTION (FRICTION LAYER) =====
+   Discourages casual saving of images and video via right-click /
+   drag-to-desktop / long-press save menus. This does NOT prevent a
+   determined user with browser DevTools from accessing the files —
+   that's not technically possible in any web browser. But it stops
+   most accidental "save image as" attempts and signals intent.
+
+   Protection scope:
+     - All <img> elements (chapter media, portrait, wordmarks)
+     - The hero <video>
+     - Background images applied via CSS (poster fallback)
+
+   Note: pointer-events stays default on <img> so click handlers on
+   parent links (e.g. wordmark <a>) still work. We protect via drag
+   prevention, user-select disable, and the script-level right-click
+   block in index.html. */
+img,
+video {
+  /* Block native drag-to-desktop on images and the video element. */
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* iOS/Safari: disable the long-press image preview/save menu. */
+  -webkit-touch-callout: none;
+}
+
 html {
   scroll-behavior: smooth;
   /* Proximity snap (not mandatory). Mandatory hijacks scrolls inside
@@ -583,21 +611,26 @@ body.is-loading {
 .stage__layer--b {
   display: flex;
   align-items: center;
-  /* Per Sid: title block was sitting too close to the right viewport
-     edge — visually unbalanced relative to its distance from the
-     subject. With a 1440px viewport, subject right edge ~700px and
-     column width ~375px, the available space (740px) divided minus
-     the column (375) leaves 365 to split. Splitting evenly: ~180px
-     each side. Bumping padding-right from 100 → 180 brings the block
-     to a visually equidistant position between subject and viewport. */
+  /* Per Sid: block should feel centered between the video subject's
+     right edge (~58% across, ~840px on 1440 viewport) and the
+     viewport right edge.
+
+     Math: subject right ~840, viewport 1440. Available right space
+     = 600px. With block ~320px wide, centering gives left-gap=140
+     and right-gap=140. Hence padding-right: 140px.
+
+     Earlier this was 180px (subject-eq with the OLD bigger title);
+     now that title is mock-sized smaller, the natural column is
+     narrower so 140px is the new equilibrium. */
   justify-content: flex-end;
-  padding: 0 180px 0 0;
+  padding: 0 140px 0 0;
 }
 
 .stage__layer--b .hero-b {
-  /* Override the wider default so this column doesn't overflow toward
-     the subject. Smaller width keeps the column tight on the right. */
-  width: min(28%, 400px);
+  /* Width sized to fit two-line title comfortably ("Hello, I am" +
+     "Siddharth.") at the new mock-proportional title size, with
+     enough room for the body paragraph below. Was min(28%, 400px). */
+  width: min(24%, 340px);
 }
 
 .hero-b {
@@ -612,9 +645,11 @@ body.is-loading {
 .hero-b__title {
   font-family: var(--display);
   font-weight: 300;
-  /* Matched to Hero-A's new sizing per mock 92.png — both intro
-     titles share the same display type and visual weight. */
-  font-size: clamp(2.4rem, 7.4vw, 7.2rem);
+  /* Reduced per Sid's updated mock — title is no longer Hero-A size,
+     it's smaller so the block feels appropriately scaled to its
+     side-column placement. New range lands at ~72px on 1440 viewport
+     (5vw), matching mock 2's measured ~88px scaled to 1440. */
+  font-size: clamp(2rem, 5vw, 4rem);
   line-height: 1.0;
   letter-spacing: -0.025em;
   color: var(--pale-blue);
