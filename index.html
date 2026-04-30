@@ -129,25 +129,10 @@
     <!-- ===== INTRO PANEL ===== -->
     <div class="work-intro-panel" id="workIntroPanel">
 
-      <!-- Math curves layer — positioned OUTSIDE the title bounding box.
-           Title sits at 50% / 50% spanning ~30-70% horizontally and
-           ~40-60% vertically (with subtext extending to ~65%). So
-           curves go to upper corners (above title), and lower corners
-           well below the subtext. Never crossing the central column. -->
-      <div class="curves" id="workCurves" aria-hidden="true">
-        <div class="curves__group">
-          <div class="curve" data-curve="thinking-nine"
-               style="--x: 22%; --y: 22%; --size: 141px; --fade-delay: 0s;"></div>
-          <div class="curve" data-curve="rose-three"
-               style="--x: 78%; --y: 22%; --size: 152px; --fade-delay: 4s;"></div>
-          <div class="curve" data-curve="spiral-search"
-               style="--x: 18%; --y: 78%; --size: 176px; --fade-delay: 8s;"></div>
-          <div class="curve" data-curve="fourier-flow"
-               style="--x: 82%; --y: 76%; --size: 168px; --fade-delay: 12s;"></div>
-          <div class="curve" data-curve="lemniscate-bloom"
-               style="--x: 50%; --y: 88%; --size: 144px; --fade-delay: 16s;"></div>
-        </div>
-      </div>
+      <!-- Curves layer removed in v53 per Sid's request (web + mobile).
+           Markup deleted; curves.js script tag removed at the bottom of
+           the file. CSS for .curves still exists but is forced to
+           display:none so any residual references never render. -->
 
       <div class="work-intro-panel__inner">
         <h2 class="work-intro-panel__title" data-split="words">My Work</h2>
@@ -394,6 +379,7 @@
   <script src="vendor/gsap.min.js"></script>
   <script src="vendor/ScrollTrigger.min.js"></script>
   <script src="script.js"></script>
-  <script src="curves.js"></script>
+  <!-- curves.js removed in v53 per Sid's request -->
+
 </body>
 </html>

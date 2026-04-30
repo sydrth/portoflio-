@@ -611,30 +611,27 @@ body.is-loading {
 .stage__layer--b {
   display: flex;
   align-items: center;
-  /* Per Sid: block should feel centered between the video subject's
-     right edge (~58% across, ~840px on 1440 viewport) and the
-     viewport right edge.
-
-     Math: subject right ~840, viewport 1440. Available right space
-     = 600px. With block ~320px wide, centering gives left-gap=140
-     and right-gap=140. Hence padding-right: 140px.
-
-     Earlier this was 180px (subject-eq with the OLD bigger title);
-     now that title is mock-sized smaller, the natural column is
-     narrower so 140px is the new equilibrium. */
+  /* Per Sid's latest mock: the title block (now sized to ~393×352 on a
+     ~1440 viewport) sits at the right edge with a modest gutter. The
+     mock measurement puts the right edge of the block ~80-100px from
+     the viewport's right edge — let's keep 100px gutter so the larger
+     title block doesn't crowd the viewport edge. */
   justify-content: flex-end;
-  padding: 0 140px 0 0;
+  padding: 0 100px 0 0;
 }
 
 .stage__layer--b .hero-b {
-  /* Width sized to fit two-line title comfortably ("Hello, I am" +
-     "Siddharth.") at the new mock-proportional title size, with
-     enough room for the body paragraph below. Was min(28%, 400px). */
-  width: min(24%, 340px);
+  /* Mock 2 (annotated screenshot): title block measures 393px wide on
+     a ~1440px viewport — that's ~27% width. Bumping to 28% with a
+     420px cap so it lands at ~403px on 1440 (very close to the
+     measured 393) and tops out at 420 on wider screens. The previous
+     min(24%, 340px) was sized for the older smaller title; new larger
+     title needs the wider container to breathe. */
+  width: min(28%, 420px);
 }
 
 .hero-b {
-  /* Wrapper that holds title above body, both right-aligned to the column. */
+  /* Wrapper that holds title above body, both left-aligned within the column. */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -645,11 +642,14 @@ body.is-loading {
 .hero-b__title {
   font-family: var(--display);
   font-weight: 300;
-  /* Reduced per Sid's updated mock — title is no longer Hero-A size,
-     it's smaller so the block feels appropriately scaled to its
-     side-column placement. New range lands at ~72px on 1440 viewport
-     (5vw), matching mock 2's measured ~88px scaled to 1440. */
-  font-size: clamp(2rem, 5vw, 4rem);
+  /* Per Sid's annotated mock: "Hello, I am" measures ~334px wide
+     inside the 393px block (~85% of block width), with "Siddharth."
+     extending to ~360px. At Display Serif Pro that puts the font
+     around 100-104px. Was 8.5vw=122px which overflowed the 393px
+     block. Trimming to 7vw caps at ~100px on 1440 — title now fits
+     inside the block as the mock shows. The 6.5rem (104px) ceiling
+     keeps it stable on wider screens. */
+  font-size: clamp(2.5rem, 7vw, 6.5rem);
   line-height: 1.0;
   letter-spacing: -0.025em;
   color: var(--pale-blue);
@@ -667,7 +667,14 @@ body.is-loading {
   font-size: clamp(1rem, 1.2vw, 1.2rem);
   line-height: 1.5;
   color: rgba(255, 255, 255, 0.82);
-  max-width: 32ch;
+  /* Per Sid's annotated mock: the body paragraph occupies the SAME
+     horizontal extent as the title block above — both sit inside the
+     393px-wide selection box. Was max-width: 32ch which created a
+     narrower body column than the title; removing the cap and locking
+     to 100% of the parent (.hero-b) means body wraps at exactly the
+     title's right edge. */
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Split text — words start hidden, JS reveals.
@@ -762,6 +769,11 @@ body.is-loading {
    appear after a brief delay when user lands on My Work, and fade out
    (fizzle) before chapter 1 emerges. JS toggles `.is-curves-on` on
    body to drive the master enter/leave fade. */
+/* Curves removed v53 — keeping CSS commented in case reinstated.
+   Forced display:none above any other rule guarantees no render path
+   even if markup were re-added or curves.js were re-included. */
+.curves { display: none !important; }
+
 .curves {
   position: fixed;
   inset: 0;
@@ -1454,13 +1466,14 @@ body.is-curves-on .curves {
        RESUME link hidden via .contact__link--desktop-only. */
 @media (max-width: 768px) {
 
-  /* ----- Inertial scroll on mobile -----
-     Disable scroll-snap on mobile so the OS's native momentum carries
-     scrolls between sections without proximity-snap interrupting the
-     flick. Desktop keeps its proximity snap (defined on html in the
-     base block above) — this rule only fires below 768px. The
-     stage scrub is unaffected (it never had snap targets inside it). */
-  html { scroll-snap-type: none !important; }
+  /* Mobile inertial scroll: leaving the html-level proximity snap from
+     the base rule ENABLED. Earlier v51 disabled it via
+     `scroll-snap-type: none !important` for free OS-momentum scroll;
+     v53 brings snap back per Sid — chapters and the work-intro panel
+     have `scroll-snap-align: start`, so flicks now glide softly into
+     section boundaries instead of stopping wherever inertia carries
+     them. The 88dvh chapter height (set further down) keeps the
+     "peek of next card" affordance intact even with snap on. */
 
   /* ----- Hide pill nav on mobile ----- */
   .pill-nav { display: none !important; }
