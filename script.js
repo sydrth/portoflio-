@@ -175,14 +175,27 @@ const aWords = layerA ? layerA.querySelectorAll('.hero-a__title .word-inner') : 
 const bTitleWords = layerB ? layerB.querySelectorAll('.hero-b__title .word-inner') : [];
 const bIntroWords = layerB ? layerB.querySelectorAll('.hero-b__intro .word-inner') : [];
 
-/* ---------- 3. Reveal timelines (paused, played/reversed by phase) ---------- */
+/* ---------- 3. Reveal timelines (paused, played/reversed by phase) ----------
+
+   IMPORTANT: every tween in tlA and tlB uses fromTo() with EXPLICIT start
+   states, never bare .to(). Reason: when GSAP rewinds a timeline (via
+   .progress(0) or .reverse()), bare .to() tweens restore "captured-on-
+   first-play" values, which can drift if the captured snapshot was taken
+   while a previous tween was still in flight. fromTo() locks the start
+   state literally, so .progress(0) deterministically returns to a known
+   baseline. This is the root fix for "fonts don't disappear at right
+   stages and appear all at once" — the timeline's rewind state is now
+   100% predictable regardless of how the user scrolls. */
 const tlA = gsap.timeline({ paused: true });
 tlA
-  .to(layerA, { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0)
-  .to(aWords, {
-    y: '0%', opacity: 1,
-    duration: 0.9, stagger: 0.06, ease: 'power3.out'
-  }, 0.05)
+  .fromTo(layerA,
+    { opacity: 0 },
+    { opacity: 1, duration: 0.5, ease: 'power2.out' }, 0)
+  .fromTo(aWords,
+    { y: '110%', opacity: 0 },                          // matches CSS initial
+    { y: '0%', opacity: 1,
+      duration: 0.9, stagger: 0.06, ease: 'power3.out' },
+    0.05)
   .fromTo(glassCard,
     { opacity: 0, y: 24, scale: 0.96 },
     { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out' },
@@ -194,38 +207,91 @@ tlB
   .fromTo(layerB,
     { opacity: 0, y: 16 },
     { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, 0)
-  .to(bTitleWords, {
-    y: '0%', opacity: 1,
-    duration: 0.9, stagger: 0.06, ease: 'power3.out'
-  }, 0.1)
-  .to(bIntroWords, {
-    y: '0%', opacity: 1,
-    duration: 0.7, stagger: 0.018, ease: 'power3.out'
-  }, 0.45);
+  .fromTo(bTitleWords,
+    { y: '110%', opacity: 0 },
+    { y: '0%', opacity: 1,
+      duration: 0.9, stagger: 0.06, ease: 'power3.out' },
+    0.1)
+  .fromTo(bIntroWords,
+    { y: '110%', opacity: 0 },
+    { y: '0%', opacity: 1,
+      duration: 0.7, stagger: 0.018, ease: 'power3.out' },
+    0.45);
 
-/* ---------- 4. Phase tracker ---------- */
+/* ---------- 4. Phase tracker — deterministic state, no race conditions ----------
+
+   PRIOR ARCHITECTURE (v52 and earlier):
+   - setPhase() called tlA.play() / tlA.reverse() / tlB.play() / tlB.reverse()
+   - Each timeline takes ~0.9s of stagger to complete
+   - On fast scroll-up, multiple play/reverse commands stack on top of each other
+     before any complete, causing in-flight tweens to fight and leave the wrapper
+     and word opacities in inconsistent states (Sid's "all fonts visible at once" bug)
+   - In phase 4, gsap.set(layerA, opacity: 1-t) was also writing the wrapper
+     opacity directly while tlA still controlled word opacities — two sources
+     of truth for layer A's visibility, racing each other.
+
+   NEW ARCHITECTURE:
+   - Each timeline still defines the visual reveal (word stagger, fade-in).
+   - Instead of play/reverse, we compute a "reveal progress" 0..1 for each
+     layer as a pure function of overall scroll progress p, then write
+     tlA.progress(value) / tlB.progress(value) every frame.
+   - Timeline progress = pure function of scroll progress. No animation race,
+     no in-flight tween conflicts. Fast scroll? State snaps to the right
+     end-state immediately. Slow scroll? Timeline walks through stagger as p
+     advances.
+   - Layer A direct-opacity writes in phase 4 are GONE — phase 4 just reverses
+     tlA's progress from 1 (start of P4) down to 0 (end of P4), giving the
+     same visual fade-out but driven by a single source of truth. */
 let lastPhase = -1;
+
+/* Layer A reveal progress as fn of overall scroll progress.
+   - 0 outside the visible window (phases 1, 2, 5, 6)
+   - eases from 0 → 1 across phase 3 entry (P2_END..P3_END midpoint)
+   - eases 1 → 0 across phase 4 (P3_END..P4_END) as we transition to layer B */
+function layerAProgress(p) {
+  if (p <= P2_END) return 0;                    // not yet visible
+  if (p <= P3_END) {
+    // Reveal during phase 3: ramps to 1 in the first ~60% of the hold
+    const t = (p - P2_END) / (P3_END - P2_END);
+    // Use only the first 0.6 of the hold for the reveal, stay at 1 after
+    return Math.min(1, t / 0.6);
+  }
+  if (p <= P4_END) {
+    // Phase 4: reverse to 0 across the full phase
+    const t = (p - P3_END) / (P4_END - P3_END);
+    return 1 - t;
+  }
+  return 0;                                      // phases 5, 6 — fully hidden
+}
+
+/* Layer B reveal progress.
+   - 0 in phases 1-4
+   - eases 0 → 1 across phase 5 entry (P4_END..first 60% of P5)
+   - holds at 1 until end of P5
+   - eases 1 → 0 across phase 6 (P5_END..1.0) as user scrolls toward Work */
+function layerBProgress(p) {
+  if (p <= P4_END) return 0;
+  if (p <= P5_END) {
+    const t = (p - P4_END) / (P5_END - P4_END);
+    return Math.min(1, t / 0.6);                // reveal in first 60% of P5
+  }
+  // Phase 6: fade out
+  const t = (p - P5_END) / (1 - P5_END);
+  const eased = t * t * (3 - 2 * t);
+  return Math.max(0, 1 - eased * 1.6);
+}
+
 function setPhase(p) {
   if (p === lastPhase) return;
   lastPhase = p;
 
-  /* Stamp current phase on <body> so CSS can hook into it. Used by
-     the mobile breakpoint to hard-hide Layer A in phases 5 and 6,
-     where GSAP's opacity tween was unreliable (layer A would stay
-     at opacity 1 even though phase logic set it to 0, causing both
-     "Human-first." and "Hello, I am Siddharth" to render at once). */
+  /* Stamp current phase on <body> so CSS can hook into it. Mobile uses
+     this to hard-hide Layer A in phases 5/6 as a defensive belt-and-braces
+     against any residual opacity drift; with the new deterministic
+     architecture, drift shouldn't happen, but the CSS guard is harmless. */
   document.body.dataset.stagePhase = p;
 
-  // Layer A visible during phase 3 only
-  if (p === 3) tlA.play();
-  else if (p < 3) tlA.reverse();
-
-  // Layer B visible during phase 5 AND phase 6 (slides up with video in 6)
-  if (p === 5 || p === 6) tlB.play();
-  else tlB.reverse();
-
-  // Pill nav: hidden in phase 1 (zero-state blur — only the wordmark
-  // should read), revealed once the video clears and phases begin.
+  // Pill nav: hidden in phase 1 only
   if (pillNav) {
     if (p === 1) pillNav.classList.add('is-hidden');
     else pillNav.classList.remove('is-hidden');
@@ -258,6 +324,61 @@ let videoDuration = VIDEO_END_AT;  // we cap at 7s anyway
 const scrollHint = document.getElementById('scrollHint');
 const SCROLL_HINT_FADE_AT = 0.01;  /* 1% of stage scroll */
 
+/* Throttle video.currentTime writes — HTML5 video coalesces rapid seek
+   requests, and on fast scroll-up the playhead can get stuck on an old
+   frame because new currentTime values are silently dropped while the
+   video is still in a `seeking` state.
+
+   THE BUG (Sid's "video stuck" report v53):
+     The previous implementation deduped by comparing the requested t
+     against video.currentTime. But video.currentTime LAGS during seeking
+     — it reports the last *successfully landed* frame, not the last
+     requested target. On fast scroll-up, here's what could go wrong:
+       1. video at 7.0s. User flicks up. Frame requests t=4.0, write happens,
+          video starts seeking 7.0 → 4.0.
+       2. Mid-seek, video.currentTime still ≈ 7.0. User scrolls more,
+          frame requests t=2.0. |7.0 - 2.0| > epsilon, write happens.
+          New seek queued.
+       3. Eventually the LAST seek wins, video lands at 2.0. Good.
+     But occasionally — particularly on mobile Safari — the dedup gate
+     catches a request that's close to video.currentTime (still lagging)
+     even though the LAST APPLIED write was a different target. The new
+     request gets dropped. Video stays at the wrong frame.
+
+   THE FIX:
+     Track the last *requested* time separately. Dedup against THAT.
+     If user requests t=2.0 then t=2.01, dedup fires (good, no point
+     re-issuing). If user requests t=2.0 then t=4.5 then t=2.0, the
+     last write IS t=2.0 even if video.currentTime is mid-seek toward
+     4.5 — third request reissues and the seek queue resolves correctly. */
+const VIDEO_SEEK_EPSILON = 0.04;
+let lastRequestedTime = -1;
+function setVideoTime(t) {
+  if (!video) return;
+  if (Math.abs(lastRequestedTime - t) < VIDEO_SEEK_EPSILON) return;
+  lastRequestedTime = t;
+  // Defensive: if the video somehow started playing (browser autoplay
+  // recovery, etc.), pause so seeks don't fight playback.
+  if (!video.paused) video.pause();
+  video.currentTime = t;
+}
+
+/* Resync watchdog — if the video's actual playhead has drifted far from
+   what we last requested (e.g. a seek failed silently, or a paused/
+   playing race left it at a stale frame), reissue the seek. Runs at a
+   gentle cadence (250ms) so it doesn't add seek-storm pressure during
+   active scrolling. */
+setInterval(() => {
+  if (!video || lastRequestedTime < 0) return;
+  if (video.seeking) return;       // don't interrupt active seeks
+  const drift = Math.abs(video.currentTime - lastRequestedTime);
+  if (drift > 0.25) {
+    // Significant drift while idle — playhead got stuck. Re-issue.
+    if (!video.paused) video.pause();
+    video.currentTime = lastRequestedTime;
+  }
+}, 250);
+
 ScrollTrigger.create({
   trigger: stage,
   start: 'top top',
@@ -267,9 +388,7 @@ ScrollTrigger.create({
     const p = self.progress;
     updateWordmark(p);
 
-    /* Toggle the hint based on current scroll position. When the user
-       drops back below the threshold, the hint reappears — useful if
-       someone scrolls back up to the zero state. */
+    /* Toggle the hint based on current scroll position. */
     if (scrollHint) {
       if (p > SCROLL_HINT_FADE_AT) {
         scrollHint.classList.add('is-faded');
@@ -278,8 +397,16 @@ ScrollTrigger.create({
       }
     }
 
+    /* ---- Drive layer reveal timelines deterministically by progress ----
+       This replaces the prior play/reverse commands inside setPhase().
+       Writing .progress() forces the timeline state to a definite point
+       every frame, eliminating in-flight tween races on fast scroll. */
+    tlA.progress(layerAProgress(p));
+    tlB.progress(layerBProgress(p));
+
+    /* ---- Phase-specific video + filter logic ---- */
     if (p <= P1_END) {
-      // Phase 1: unblur, locked at 0
+      // Phase 1: unblur, locked at currentTime 0
       const t = p / P1_END;
       const blur = 40 * (1 - t);
       const sat = 0.7 + (0.3 * t);
@@ -287,16 +414,16 @@ ScrollTrigger.create({
       const scale = 1.1 - (0.1 * t);
       video.style.filter = `blur(${blur}px) saturate(${sat}) brightness(${bright})`;
       video.style.transform = `scale(${scale})`;
-      video.currentTime = 0;
+      setVideoTime(0);
       gsap.set(stage, { opacity: 1 });
       setPhase(1);
     }
     else if (p <= P2_END) {
-      // Phase 2: scrub 0 → 1.86
+      // Phase 2: scrub 0 → VIDEO_PAUSE_AT
       const t = (p - P1_END) / (P2_END - P1_END);
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
       video.style.transform = 'scale(1)';
-      video.currentTime = VIDEO_PAUSE_AT * t;
+      setVideoTime(VIDEO_PAUSE_AT * t);
       gsap.set(stage, { opacity: 1 });
       setPhase(2);
     }
@@ -304,48 +431,36 @@ ScrollTrigger.create({
       // Phase 3: hold A
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
       video.style.transform = 'scale(1)';
-      video.currentTime = VIDEO_PAUSE_AT;
+      setVideoTime(VIDEO_PAUSE_AT);
       gsap.set(stage, { opacity: 1 });
       setPhase(3);
     }
     else if (p <= P4_END) {
-      // Phase 4: scrub 1.86 → 7.0 (per spec, end at 7s not 8s)
+      // Phase 4: scrub VIDEO_PAUSE_AT → VIDEO_END_AT.
+      // Layer A fade-out is handled by layerAProgress() driving tlA.progress(),
+      // not by direct gsap.set on layerA — that prior dual-source-of-truth
+      // pattern is what caused the layered-text bug.
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
       video.style.transform = 'scale(1)';
       const t = (p - P3_END) / (P4_END - P3_END);
-      video.currentTime = VIDEO_PAUSE_AT + ((VIDEO_END_AT - VIDEO_PAUSE_AT) * t);
-      // Fade A out manually so it doesn't clash with B
-      gsap.set(layerA, { opacity: 1 - t });
+      setVideoTime(VIDEO_PAUSE_AT + ((VIDEO_END_AT - VIDEO_PAUSE_AT) * t));
       gsap.set(stage, { opacity: 1 });
       setPhase(4);
     }
     else if (p <= P5_END) {
-      // Phase 5: hold B at 7s
+      // Phase 5: hold B at end frame
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
       video.style.transform = 'scale(1) translateY(0)';
-      video.currentTime = VIDEO_END_AT;
-      gsap.set(layerA, { opacity: 0 });
+      setVideoTime(VIDEO_END_AT);
       gsap.set(stage, { opacity: 1 });
       setPhase(5);
     }
     else {
-      // Phase 6: video stays put, ONLY the "Hello, I am Siddharth" text
-      // fades out. Per Sid's spec: the video should not be touched. The
-      // navy strip that appeared between intro and work section is fixed
-      // by the .work__glow gradient layer being always painted at z-index
-      // 0 — there's no longer any moment where solid navy shows alone.
-      const t = (p - P5_END) / (1 - P5_END);
-      const eased = t * t * (3 - 2 * t);
-      // Reset video filter/transform to clean state (no blur, no slide)
+      // Phase 6: video stays at end, layer B fades via layerBProgress.
       video.style.filter = 'blur(0px) saturate(1) brightness(1)';
       video.style.transform = 'scale(1) translateY(0)';
-      video.currentTime = VIDEO_END_AT;
-      gsap.set(layerA, { opacity: 0 });
-      // Text fades out as the user scrolls
-      gsap.set(layerB, { opacity: Math.max(0, 1 - eased * 1.6), y: 0 });
-      // Stage stays fully opaque — video remains visible
+      setVideoTime(VIDEO_END_AT);
       gsap.set(stage, { opacity: 1 });
-      // Reset stage backgroundColor in case a previous turn's code set it
       stage.style.backgroundColor = '';
       setPhase(6);
     }
