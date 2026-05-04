@@ -298,19 +298,18 @@ function setPhase(p) {
   }
 }
 
-/* Wordmark scales smoothly during phase 4 (1.0 → 0.42),
-   stays at full size in phases 1-3, locked small in phase 5 */
-const WORDMARK_MIN_SCALE = 0.42;
+/* Wordmark stays at full size throughout the stage scrub. Per Sid v55:
+   the prior phase-4 shrink (1.0 → 0.42) was removed — wordmark now
+   reads at full scale during Hold A, the P4 transition, AND Hold B.
+   It still naturally disappears when the user scrolls past the stage
+   into the Work section because the wordmark is fixed-positioned
+   inside the stage and the .is-hidden class is toggled by the section
+   tracker further down the file. */
 function updateWordmark(p) {
-  let scale;
-  if (p <= P3_END) scale = 1;
-  else if (p <= P4_END) {
-    const t = (p - P3_END) / (P4_END - P3_END);
-    const eased = 1 - Math.pow(1 - t, 3);
-    scale = 1 - (1 - WORDMARK_MIN_SCALE) * eased;
-  }
-  else scale = WORDMARK_MIN_SCALE;
-  wordmark.style.setProperty('--wordmark-scale', scale);
+  // No-op for scale; the stage→work hide/show toggle is handled
+  // separately. Keep this function so the call site in onUpdate
+  // stays stable for any future phase-driven wordmark behavior.
+  wordmark.style.setProperty('--wordmark-scale', 1);
 }
 
 /* ---------- 5. Main scroll handler ---------- */

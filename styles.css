@@ -622,12 +622,12 @@ body.is-loading {
 
 .stage__layer--b .hero-b {
   /* Mock 2 (annotated screenshot): title block measures 393px wide on
-     a ~1440px viewport — that's ~27% width. Bumping to 28% with a
-     420px cap so it lands at ~403px on 1440 (very close to the
-     measured 393) and tops out at 420 on wider screens. The previous
-     min(24%, 340px) was sized for the older smaller title; new larger
-     title needs the wider container to breathe. */
-  width: min(28%, 420px);
+     a ~1440px viewport — that's ~27% width. With the new -10% title
+     size (per Sid v55 ask), 380px is the snug width: "Hello, I am"
+     at ~93px renders ~382px, which fits in 380 with single-pixel
+     headroom; "Siddharth." at ~93px renders ~340px, fits with room
+     to spare. Was min(28%, 420). */
+  width: min(26%, 380px);
 }
 
 .hero-b {
@@ -642,18 +642,24 @@ body.is-loading {
 .hero-b__title {
   font-family: var(--display);
   font-weight: 300;
-  /* Per Sid's annotated mock: "Hello, I am" measures ~334px wide
-     inside the 393px block (~85% of block width), with "Siddharth."
-     extending to ~360px. At Display Serif Pro that puts the font
-     around 100-104px. Was 8.5vw=122px which overflowed the 393px
-     block. Trimming to 7vw caps at ~100px on 1440 — title now fits
-     inside the block as the mock shows. The 6.5rem (104px) ceiling
-     keeps it stable on wider screens. */
-  font-size: clamp(2.5rem, 7vw, 6.5rem);
+  /* Sid v55: reduce title -10% from prior clamp(2.5rem, 7vw, 6.5rem).
+     Math: 2.5×0.9=2.25rem, 7×0.9=6.3vw, 6.5×0.9=5.85rem. At a 1440
+     viewport that lands at 90.7px (vs 100.8px before). At the wider
+     6.5rem ceiling (104px) the title was overflowing the tight block
+     Sid wants — the new 5.85rem (93.6px) ceiling fits the 380px
+     container with breathing room. */
+  font-size: clamp(2.25rem, 6.3vw, 5.85rem);
   line-height: 1.0;
   letter-spacing: -0.025em;
   color: var(--pale-blue);
   font-style: normal;          /* upright per mock */
+  /* Defensive: never let the title be wider than its container, even
+     if a single word's natural width exceeds the column at certain
+     viewport sizes. With the lighter ceiling above this shouldn't
+     trigger, but it's a no-cost belt-and-braces against future
+     ceiling drift. */
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .hero-b__title em {
@@ -666,13 +672,14 @@ body.is-loading {
   font-weight: 400;
   font-size: clamp(1rem, 1.2vw, 1.2rem);
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.82);
+  /* Sid v55: body opacity dropped to 80% (from 82%). The -2% looks
+     marginal but reads visibly more recessed against the navy/blue
+     stage backdrop, letting the title carry more visual weight. */
+  color: rgba(255, 255, 255, 0.80);
   /* Per Sid's annotated mock: the body paragraph occupies the SAME
      horizontal extent as the title block above — both sit inside the
-     393px-wide selection box. Was max-width: 32ch which created a
-     narrower body column than the title; removing the cap and locking
-     to 100% of the parent (.hero-b) means body wraps at exactly the
-     title's right edge. */
+     selection box. Width:100% locks body to the parent .hero-b column
+     (now 380px capped). */
   width: 100%;
   max-width: 100%;
 }
